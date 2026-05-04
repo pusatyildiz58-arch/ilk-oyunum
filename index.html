@@ -1,0 +1,2696 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toprak ve Kilic - Ekinli</title>
+<!-- Sandbox RPG System Styles -->
+<link rel="stylesheet" href="styles/sandbox-rpg.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#10140e;color:#f1e4c2;font-family:Georgia,serif}
+canvas{display:block}
+#hud{
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  min-height:50px;padding:8px 16px;
+  background:linear-gradient(180deg,rgba(13,15,10,.96),rgba(13,15,10,.72));
+  border-bottom:1px solid #6d5a31;
+}
+.stat{display:flex;align-items:center;gap:5px;font-size:13px;white-space:nowrap}
+.stat b{color:#d7b85f;min-width:28px;text-align:right}
+#rankbox{margin-left:auto;text-align:right;border-left:1px solid #6d5a31;padding-left:12px}
+#rankname{font-weight:bold;color:#d7b85f}
+#ranksub{font-size:11px;color:#b9a370}
+#timebar{
+  position:fixed;top:50px;left:50%;transform:translateX(-50%);
+  z-index:48;padding:5px 18px;border:1px solid #6d5a31;border-top:0;
+  background:rgba(17,16,11,.88);border-radius:0 0 8px 8px;
+  color:#d9c28a;font-size:12px;white-space:nowrap;
+}
+#sidePanel{
+  position:fixed;top:82px;right:16px;z-index:45;width:270px;
+  background:rgba(16,18,13,.88);border:1px solid #6d5a31;border-radius:8px;
+  padding:12px 14px;box-shadow:0 10px 24px rgba(0,0,0,.3);
+}
+#sidePanel h2{font-size:18px;color:#d7b85f;margin-bottom:8px}
+.panel-row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid rgba(109,90,49,.36);padding:6px 0;font-size:13px}
+.panel-row span:last-child{color:#f2d783;text-align:right}
+#controls{
+  position:fixed;bottom:16px;left:16px;z-index:45;
+  background:rgba(16,18,13,.88);border:1px solid #6d5a31;border-radius:8px;
+  padding:10px 13px;color:#cdb883;font-size:11px;line-height:1.75;
+}
+#minimap-container{
+  position:fixed;bottom:16px;right:16px;z-index:45;
+  width:176px;height:176px;background:rgba(12,15,11,.9);
+  border:1px solid #6d5a31;border-radius:8px;overflow:hidden;
+}
+#interactionPrompt{
+  position:fixed;bottom:212px;left:50%;transform:translateX(-50%);
+  z-index:55;display:none;padding:9px 18px;border:1px solid #d7b85f;border-radius:7px;
+  background:rgba(12,12,8,.86);color:#f2d783;font-size:13px;
+}
+#menu,#economyPanel,#landPanel{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:80;display:none;min-width:380px;max-width:520px;max-height:82vh;overflow-y:auto;
+  padding:20px 22px;border:1px solid #6d5a31;border-radius:9px;
+  background:rgba(14,13,9,.97);box-shadow:0 18px 52px rgba(0,0,0,.48);
+}
+#menu h2,#economyPanel h2,#landPanel h2{font-size:20px;color:#d7b85f;margin-bottom:12px;border-bottom:1px solid #6d5a31;padding-bottom:8px}
+#menu h3,#economyPanel h3,#landPanel h3{font-size:13px;color:#b9a370;margin:14px 0 8px;text-transform:uppercase;letter-spacing:.04em}
+.close-btn{position:absolute;top:9px;right:13px;cursor:pointer;color:#b9a370;font-size:22px}
+.close-btn:hover{color:#f2d783}
+.info-row{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid rgba(109,90,49,.28);padding:6px 0;font-size:13px}
+.price{color:#f2d783}
+.muted{color:#a79568;font-size:12px;line-height:1.45}
+button{
+  width:100%;margin:5px 0;padding:10px 12px;border:1px solid #6d5a31;border-radius:6px;
+  background:#21180e;color:#f1e4c2;font-family:Georgia,serif;font-size:13px;text-align:left;cursor:pointer;
+}
+button:hover{border-color:#d7b85f;background:#2d2112;color:#ffe6a1}
+button:disabled{opacity:.42;cursor:not-allowed}
+#notification{
+  position:fixed;top:76px;left:50%;transform:translateX(-50%);
+  z-index:95;opacity:0;pointer-events:none;transition:opacity .28s;
+  padding:10px 22px;border:1px solid #6d5a31;border-radius:8px;
+  background:rgba(12,12,8,.94);color:#f2d783;font-size:14px;
+}
+#loading{
+  position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column;
+  background:linear-gradient(135deg,#11140d,#23210f);color:#d7b85f;
+}
+#loading h1{font-size:40px;letter-spacing:2px;margin-bottom:4px}
+#loading h2{font-size:16px;color:#b9a370;font-weight:normal;margin-bottom:20px}
+.loader{width:280px;height:8px;background:#2a2214;border-radius:999px;overflow:hidden}
+.loader-bar{height:100%;width:0;background:linear-gradient(90deg,#7c8b38,#d7b85f);transition:width .25s}
+#loadingStatus{margin-top:11px;color:#cdb883;font-size:13px}
+@media(max-width:700px){
+  #hud{gap:8px;padding:6px 10px;align-items:flex-start}
+  #rankbox{display:none}
+  #timebar{top:58px;font-size:11px;padding:4px 12px}
+  #sidePanel{top:84px;left:104px;right:16px;width:auto;padding:10px 12px}
+  #sidePanel h2{font-size:16px;margin-bottom:5px}
+  .panel-row{font-size:12px;padding:4px 0}
+  #controls{font-size:10px;padding:9px 12px}
+  #minimap-container{width:176px;height:176px}
+  #menu,#economyPanel,#landPanel{min-width:0;width:calc(100vw - 28px);max-height:78vh}
+}
+</style>
+</head>
+<body>
+<div id="loading">
+  <h1>TOPRAK VE KILIC</h1>
+  <h2>Ekinli koyu kuruluyor</h2>
+  <div class="loader"><div class="loader-bar" id="loaderBar"></div></div>
+  <div id="loadingStatus">Hazirlaniyor...</div>
+</div>
+
+<div id="hud">
+  <div class="stat">Altin <b id="hgold">120</b></div>
+  <div class="stat">Tahıl <b id="hgrain">30</b></div>
+  <div class="stat">Et <b id="hmeat">6</b></div>
+  <div class="stat">Odun <b id="hwood">20</b></div>
+  <div class="stat">Isciler <b id="hworkers">0</b></div>
+  <div class="stat">Enerji <b id="henergy">100</b></div>
+  <div id="rankbox">
+    <div id="rankname">Ekinli</div>
+    <div id="ranksub">Tek koy odakli orta cag yasami</div>
+  </div>
+</div>
+<div id="timebar">Sabah - Ekinli</div>
+
+<div id="sidePanel">
+  <h2>Ekinli</h2>
+  <div id="villageSummary"></div>
+</div>
+
+<div id="controls">
+  <strong style="color:#d7b85f">KONTROLLER</strong><br>
+  WASD - Hareket<br>
+  Sag Tik Surukle - Kamera<br>
+  E - Etkilesim<br>
+  K - Ekonomi defteri<br>
+  T - Sahip oldugum tarlalar<br>
+  Shift+Al/Sat - 10 birim<br>
+  U - Uyu (ev gerekli)<br>
+</div>
+
+<div id="minimap-container">
+  <canvas id="minimap" width="176" height="176"></canvas>
+</div>
+
+<div id="interactionPrompt">[ E ] Etkiles</div>
+<div id="notification"></div>
+
+<div id="menu">
+  <span class="close-btn" onclick="closeMenu()">x</span>
+  <h2 id="menuTitle">Ekinli</h2>
+  <div id="menuContent"></div>
+</div>
+
+<div id="economyPanel">
+  <span class="close-btn" onclick="closeEconomy()">x</span>
+  <h2>Koy ekonomisi</h2>
+  <div id="econContent"></div>
+</div>
+
+<div id="landPanel">
+  <span class="close-btn" onclick="closeLand()">x</span>
+  <h2>Tarlalar ve araziler</h2>
+  <div id="landContent"></div>
+</div>
+
+<canvas id="game"></canvas>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script type="module" src="./main.js"></script>
+
+<script>
+// HOUSING LEVELS
+const HOUSING_LEVELS={
+  1:{name:'Kerpic Ev',families:1,maxPeople:5,incomePerPerson:2,baseHouseIncome:-1,taxRate:.02,scale:.86,material:'mud',garden:true},
+  2:{name:'Kucuk Ahsap Ev',families:1,maxPeople:6,incomePerPerson:2.5,baseHouseIncome:-0.5,taxRate:.03,scale:0.93,material:'wood',garden:true},
+  3:{name:'Ahsap Ev',families:1,maxPeople:7,incomePerPerson:3,baseHouseIncome:0,taxRate:.04,scale:1.00,material:'wood',garden:true},
+  4:{name:'Ahsap Ev',families:2,maxPeople:10,incomePerPerson:4,baseHouseIncome:2,taxRate:.06,scale:1.12,material:'wood',garden:false,floors:2},
+  5:{name:'Tas Ev',families:2,maxPeople:16,incomePerPerson:5,baseHouseIncome:4,taxRate:.08,scale:1.22,material:'stone',garden:true,floors:2},
+  6:{name:'Tas Ev',families:3,maxPeople:24,incomePerPerson:6,baseHouseIncome:7,taxRate:.10,scale:1.32,material:'stone',garden:true,blocks:2,floors:2},
+  7:{name:'Luks Ev',families:3,maxPeople:30,incomePerPerson:8,baseHouseIncome:11,taxRate:.12,scale:1.45,material:'richWood',garden:true,floors:2},
+  8:{name:'Konak',families:4,maxPeople:40,incomePerPerson:10,baseHouseIncome:16,taxRate:.15,scale:1.62,material:'richWood',garden:true,courtyard:true},
+  9:{name:'Malikane',families:5,maxPeople:55,incomePerPerson:12,baseHouseIncome:22,taxRate:.18,scale:1.82,material:'stone',garden:true,courtyard:true},
+  10:{name:'Sarayvari Yapi',families:6,maxPeople:70,incomePerPerson:15,baseHouseIncome:30,taxRate:.22,scale:2.05,material:'stone',garden:true,courtyard:true}
+};
+
+const state={
+  gold:120,grain:30,meat:6,leather:0,wood:20,iron:0,cloth:0,tools:0,workers:0,
+  day:1,ownedFields:[],ownedPlots:[],incomeHistory:[],
+  selected:null,
+  energy:100,maxEnergy:100,hasHouse:false,workedToday:false
+};
+
+const MARKET_GOODS={
+  grain:{name:'Tahil',base:8,weight:1},
+  meat:{name:'Et',base:15,weight:1.4},
+  leather:{name:'Deri',base:20,weight:1.2},
+  wood:{name:'Odun',base:6,weight:1.6},
+  iron:{name:'Demir',base:32,weight:1.8},
+  cloth:{name:'Kumas',base:18,weight:.8},
+  tools:{name:'Alet',base:28,weight:1.1}
+};
+
+const village={
+  id:0,name:'Ekinli',type:'grain_livestock',x:0,z:0,
+  treasury:80,grain:90,meat:20,leather:6,wood:45,
+  houses:[],fields:[],plots:[],population:0,capacity:0,
+  taxLastTick:0,houseIncome:0,fieldProduction:0,foodBalance:0,
+  aiMessage:'Koy kuruldu.',market:null
+};
+
+const tradeVillages=[];
+
+const canvas=document.getElementById('game');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+
+const scene3=new THREE.Scene();
+scene3.background=new THREE.Color(0x8fb8cf);
+scene3.fog=new THREE.FogExp2(0x8fb8cf,0.006);
+const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,700);
+window.addEventListener('resize',()=>{
+  renderer.setSize(innerWidth,innerHeight);
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+const ambLight=new THREE.AmbientLight(0xffedd2,.68);
+scene3.add(ambLight);
+const sunLight=new THREE.DirectionalLight(0xfff4d8,1.25);
+sunLight.position.set(90,150,70);
+sunLight.castShadow=true;
+sunLight.shadow.mapSize.width=2048;
+sunLight.shadow.mapSize.height=2048;
+sunLight.shadow.camera.left=-230;
+sunLight.shadow.camera.right=230;
+sunLight.shadow.camera.top=230;
+sunLight.shadow.camera.bottom=-230;
+sunLight.shadow.camera.near=1;
+sunLight.shadow.camera.far=460;
+scene3.add(sunLight);
+const fillLight=new THREE.DirectionalLight(0xd8ebff,.28);
+fillLight.position.set(-70,45,-60);
+scene3.add(fillLight);
+
+const M={
+  grass:new THREE.MeshLambertMaterial({color:0x557a3a}),
+  grass2:new THREE.MeshLambertMaterial({color:0x6f8f45}),
+  dirt:new THREE.MeshLambertMaterial({color:0x8a6b45}),
+  road:new THREE.MeshLambertMaterial({color:0x9b7a4d}),
+  mud:new THREE.MeshLambertMaterial({color:0x9c744c}),
+  wood:new THREE.MeshLambertMaterial({color:0x7d4f23}),
+  richWood:new THREE.MeshLambertMaterial({color:0x5c3820}),
+  roof:new THREE.MeshLambertMaterial({color:0x7d2e24}),
+  thatch:new THREE.MeshLambertMaterial({color:0xb6a15a}),
+  stone:new THREE.MeshLambertMaterial({color:0x77746a}),
+  darkstone:new THREE.MeshLambertMaterial({color:0x4d4e49}),
+  crop:new THREE.MeshLambertMaterial({color:0xd8c34e}),
+  cropGreen:new THREE.MeshLambertMaterial({color:0x5f8e34}),
+  water:new THREE.MeshLambertMaterial({color:0x3d83a7,transparent:true,opacity:.82}),
+  trunk:new THREE.MeshLambertMaterial({color:0x563817}),
+  leaves:new THREE.MeshLambertMaterial({color:0x2f6933}),
+  leaves2:new THREE.MeshLambertMaterial({color:0x477a37}),
+  skin:new THREE.MeshLambertMaterial({color:0xe5bd8c}),
+  cloth:new THREE.MeshLambertMaterial({color:0x6f5233}),
+  child:new THREE.MeshLambertMaterial({color:0x486f8f}),
+  elder:new THREE.MeshLambertMaterial({color:0x746d60}),
+  trader:new THREE.MeshLambertMaterial({color:0x7d6630}),
+  leader:new THREE.MeshLambertMaterial({color:0x783f32}),
+  player:new THREE.MeshLambertMaterial({color:0x2f5f83}),
+  plot:new THREE.MeshLambertMaterial({color:0x6a5a39,transparent:true,opacity:.42}),
+  animal:new THREE.MeshLambertMaterial({color:0xe8e0ca}),
+  rock:new THREE.MeshLambertMaterial({color:0x767568}),
+  bush:new THREE.MeshLambertMaterial({color:0x3f6f34}),
+  straw:new THREE.MeshLambertMaterial({color:0xcab568}),
+  clothRed:new THREE.MeshLambertMaterial({color:0x9a3e2e}),
+  clothBlue:new THREE.MeshLambertMaterial({color:0x3e5f8d})
+};
+
+const roads=[];
+const interactables=[];
+const npcs=[];
+const trees=[];
+const blockers=[];
+const PL={g:null,lL:null,lR:null,aL:null,aR:null,pos:new THREE.Vector3(0,0,-4),speed:12,angle:0};
+let nearInter=null;
+let camAngle=.55;
+let rmb=false;
+let lastMX=0;
+let dayClock=.25;
+let econTimer=0;
+let aiTimer=0;
+const DAY_SECONDS=160;
+
+// ===== GAME STATE =====
+let gold=100,health=100,level=1;
+let workers=0,workersMax=0,farms=0,farmsMax=0;
+let productionRate={wheat:0.4,vegetables:0.2};
+let dayTime=0;
+let playerEnergy=100,maxPlayerEnergy=100;
+let shiftHeld=false;
+
+// ===== INVENTORY SYSTEM (from old game) =====
+const GOODS={
+  food:{name:'Tahıl',icon:'🌾',base:8},
+  meat:{name:'Et',icon:'🥩',base:15},
+  leather:{name:'Deri',icon:'🐂',base:20},
+  iron:{name:'Demir',icon:'⚒️',base:30},
+  wood:{name:'Odun',icon:'🪵',base:5},
+  weapon:{name:'Silah',icon:'⚔️',base:80},
+  armor:{name:'Zırh',icon:'🛡️',base:100}
+};
+
+let inventory={
+  food:5,
+  meat:0,
+  leather:0,
+  iron:0,
+  wood:0,
+  weapon:0,
+  armor:0
+};
+
+let maxInventory=50;
+
+// ===== TRANSPORT SYSTEM =====
+let playerTransport={
+  horse: false,
+  caravan: false,
+  currentSpeed: 1.0,
+  baseSpeed: 1.0
+};
+
+function setP(p,s){
+  document.getElementById('loaderBar').style.width=p+'%';
+  document.getElementById('loadingStatus').textContent=s;
+}
+
+function mesh(geo,mat,x,y,z,parent,shadow=true){
+  const m=new THREE.Mesh(geo,mat);
+  m.position.set(x,y,z);
+  if(shadow){m.castShadow=true;m.receiveShadow=true}
+  if(parent)parent.add(m);else scene3.add(m);
+  return m;
+}
+
+function plane(w,d,mat,x,z,parent){
+  const p=mesh(new THREE.PlaneGeometry(w,d),mat,x,.035,z,parent);
+  p.rotation.x=-Math.PI/2;
+  return p;
+}
+
+function registerBlocker(id,x,z,radius){
+  const existing=blockers.find(b=>b.id===id);
+  if(existing){
+    existing.x=x;existing.z=z;existing.radius=radius;
+  }else{
+    blockers.push({id,x,z,radius});
+  }
+}
+
+function isBlocked(x,z){
+  for(const b of blockers){
+    if(Math.hypot(x-b.x,z-b.z)<b.radius)return true;
+  }
+  return false;
+}
+
+function frontOf(place,distance=2.8){
+  const rot=place.rot||0;
+  return {x:place.x+Math.sin(rot)*distance,z:place.z+Math.cos(rot)*distance};
+}
+
+function notify(msg){
+  const n=document.getElementById('notification');
+  n.textContent=msg;
+  n.style.opacity=1;
+  clearTimeout(notify.timer);
+  notify.timer=setTimeout(()=>n.style.opacity=0,3000);
+}
+
+function money(value){return Math.max(0,Math.round(value));}
+function createMarket(profile){
+  const market={stock:{},demand:{},production:{},consumption:{}};
+  for(const id in MARKET_GOODS){
+    const cfg=profile[id]||{};
+    market.stock[id]=cfg.stock??24;
+    market.demand[id]=cfg.demand??28;
+    market.production[id]=cfg.production??0;
+    market.consumption[id]=cfg.consumption??.12;
+  }
+  return market;
+}
+function getSettlementById(id){
+  if(id==='ekinli')return village;
+  return tradeVillages.find(v=>v.id===id)||null;
+}
+function getAllSettlements(){
+  return [village,...tradeVillages];
+}
+function marketPrice(settlement,good,side='buy'){
+  const item=MARKET_GOODS[good];
+  const market=settlement.market;
+  const stock=Math.max(1,market.stock[good]??1);
+  const demand=Math.max(1,market.demand[good]??1);
+  const scarcity=demand/stock;
+  const distance=Math.hypot(settlement.x-village.x,settlement.z-village.z);
+  const distancePremium=settlement.id==='ekinli'?0:Math.min(.32,distance/420);
+  const typeBonus=settlement.priceBias?.[good]??0;
+  const factor=Math.max(.45,Math.min(3.5,.72+scarcity*.62+distancePremium+typeBonus));
+  const buy=Math.max(1,Math.round(item.base*factor));
+  return side==='sell'?Math.max(1,Math.floor(buy*.78)):buy;
+}
+function processMarket(settlement,dt){
+  if(!settlement.market)return;
+  for(const good in MARKET_GOODS){
+    const market=settlement.market;
+    market.stock[good]=Math.max(0,Math.min(260,market.stock[good]+(market.production[good]-market.consumption[good])*dt));
+    const ideal=settlement.idealDemand?.[good]??30;
+    market.demand[good]+= (ideal-market.demand[good])*.015*dt;
+    market.demand[good]=Math.max(5,Math.min(120,market.demand[good]));
+  }
+}
+function syncEkinliMarketFromVillage(){
+  if(!village.market)return;
+  village.market.stock.grain=Math.max(village.market.stock.grain,village.grain*.45);
+  village.market.stock.meat=Math.max(village.market.stock.meat,village.meat*.55);
+  village.market.stock.leather=Math.max(village.market.stock.leather,village.leather*.5);
+  village.market.stock.wood=Math.max(village.market.stock.wood,village.wood*.35);
+}
+function housingDef(level){return HOUSING_LEVELS[Math.max(1,Math.min(10,level))];}
+function housePopulation(house){return house.families.reduce((sum,f)=>sum+f.members,0)}
+function fieldArea(field){
+  const t=(field.level-1)/99;
+  const eased=1-Math.pow(1-t,1.42);
+  return Math.round(Math.min(field.maxArea,field.baseArea+(field.maxArea-field.baseArea)*eased));
+}
+function fieldWorkerCapacity(field){return Math.max(1,Math.floor(fieldArea(field)/42))}
+function fieldProduction(field){
+  const area=fieldArea(field);
+  const cap=fieldWorkerCapacity(field);
+  const workers=Math.max(0,field.workers);
+  const workerFit=Math.min(workers,cap)/cap;
+  const overload=workers>cap?Math.max(.45,1-(workers-cap)*.08):1;
+  const quality=field.fertility*field.irrigation*field.maintenance;
+  return area*.045*(.18+workerFit*.82)*quality*overload;
+}
+function upgradeCostField(field){return money(28+field.level*7+fieldArea(field)*.05)}
+function fieldBuyPrice(field){return money(60+field.level*9+fieldArea(field)*.08)}
+function houseUpgradeCost(house){return money(45+house.level*38+housePopulation(house)*3)}
+
+function calculateHouseEconomy(house){
+  const def=housingDef(house.level);
+  const pop=housePopulation(house);
+  let gross=0;
+  for(const family of house.families){
+    gross+=(family.members*def.incomePerPerson+def.baseHouseIncome)*(family.activity||1);
+  }
+  const overcrowding=Math.max(0,pop-def.maxPeople);
+  const tax=Math.max(0,gross)*def.taxRate;
+  const net=gross-tax-overcrowding*1.6;
+  return {pop,capacity:def.maxPeople,gross,tax,net,overcrowding};
+}
+
+function recalculateVillage(){
+  let population=0,capacity=0,tax=0,houseIncome=0;
+  for(const house of village.houses){
+    const e=calculateHouseEconomy(house);
+    house.economy=e;
+    population+=e.pop;
+    capacity+=e.capacity;
+    tax+=e.tax;
+    houseIncome+=e.net;
+  }
+  village.population=population;
+  village.capacity=capacity;
+  village.taxLastTick=tax;
+  village.houseIncome=houseIncome;
+  village.fieldProduction=village.fields.reduce((s,f)=>s+fieldProduction(f),0);
+  village.foodBalance=village.fieldProduction+village.meat*.02-population*.18;
+}
+
+function processEconomyTick(){
+  recalculateVillage();
+  syncEkinliMarketFromVillage();
+  let fieldGain=0;
+  for(const field of village.fields){
+    const gain=fieldProduction(field);
+    fieldGain+=gain;
+    
+    // Initialize depot if not exists
+    if(!field.depot){
+      field.depot = {
+        capacity: fieldArea(field) * 2, // Capacity based on field size
+        current: 0,
+        goods: { grain: 0 }
+      };
+    }
+    
+    // Add production to depot instead of direct inventory
+    if(field.depot.current < field.depot.capacity){
+      const amountToAdd = Math.min(gain, field.depot.capacity - field.depot.current);
+      field.depot.goods.grain += amountToAdd;
+      field.depot.current += amountToAdd;
+      
+      if(field.owner==='player'){
+        state.incomeHistory.push({type:'field',label:field.name,amount:amountToAdd,time:Date.now()});
+      }
+    }
+    
+    field.maintenance=Math.max(.72,field.maintenance-.002);
+  }
+
+  const housingTax=village.taxLastTick;
+  const foodNeed=village.population*.18;
+  village.grain=Math.max(0,village.grain-foodNeed);
+  village.treasury+=housingTax+fieldGain*.025;
+  village.meat+=Math.max(0,1.2+village.population*.012);
+  village.wood+=.35;
+  syncEkinliMarketFromVillage();
+  for(const settlement of getAllSettlements())processMarket(settlement,6);
+
+  state.grain=Math.max(0,state.grain-state.workers*.03);
+  gold+=Math.floor(state.workers*.35);
+  recalculateVillage();
+  updateUI();
+}
+
+function runVillageAI(){
+  recalculateVillage();
+  const lowField=village.fields.slice().sort((a,b)=>a.level-b.level)[0];
+  const lowHouse=village.houses.slice().sort((a,b)=>a.level-b.level)[0];
+  const emptyPlot=village.plots.find(p=>!p.owner&&!p.built);
+  let acted=false;
+
+  if(village.foodBalance<3&&lowField&&lowField.level<100&&village.treasury>upgradeCostField(lowField)*.7){
+    village.treasury-=upgradeCostField(lowField)*.7;
+    lowField.level+=1;
+    refreshFieldMesh(lowField);
+    village.aiMessage=`AI ${lowField.name} tarlasini genisletti.`;
+    acted=true;
+  }
+
+  if(!acted&&village.population>village.capacity*.82&&emptyPlot&&village.treasury>95){
+    village.treasury-=95;
+    buildHouseOnPlot(emptyPlot,'village');
+    village.aiMessage='AI yeni bir kerpic ev insa etti.';
+    acted=true;
+  }
+
+  if(!acted&&lowHouse&&lowHouse.level<10&&village.treasury>houseUpgradeCost(lowHouse)*.65){
+    village.treasury-=houseUpgradeCost(lowHouse)*.65;
+    lowHouse.level+=1;
+    normalizeHouseFamilies(lowHouse);
+    refreshHouseMesh(lowHouse);
+    village.aiMessage=`AI ${lowHouse.name} evini ${lowHouse.level}. seviyeye cikardi.`;
+    acted=true;
+  }
+
+  if(village.grain>village.population*.9&&village.population<village.capacity){
+    addPopulation(1);
+  }
+
+  // NPC Economic Activities
+  processNPCEconomy();
+  
+  // Property Tax Collection
+  collectPropertyTaxes();
+
+  recalculateVillage();
+  updateUI();
+}
+
+function processNPCEconomy(){
+  const now = Date.now();
+  
+  for(const npc of npcs){
+    if(!npc.economy) continue;
+    
+    // Special handling for Ali and Hasan (owner NPCs)
+    if(npc.role === 'village_owner' || npc.role === 'trader_owner'){
+      // Ali manages his fields and hires workers
+      if(npc.role === 'village_owner'){
+        // Ali earns from his fields
+        const aliFields = village.fields.filter(f => f.owner === 'ali');
+        for(const field of aliFields){
+          const production = fieldProduction(field);
+          if(field.depot && field.depot.current < field.depot.capacity){
+            field.depot.goods.grain += production * 0.1; // Ali gets 10% of production
+            field.depot.current += production * 0.1;
+          }
+        }
+        
+        // Ali hires workers periodically
+        if(now - npc.economy.lastWorkerHireTime > npc.economy.workerHireCooldown){
+          hireWorkersForOwner(npc);
+          npc.economy.lastWorkerHireTime = now;
+        }
+      }
+      
+      // Hasan trades and manages his field
+      if(npc.role === 'trader_owner'){
+        // Hasan earns from trading
+        if(now - npc.economy.lastTradeTime > npc.economy.tradeCooldown){
+          const tradeProfit = Math.floor(Math.random() * 8) + 3;
+          npc.economy.gold += tradeProfit;
+          npc.economy.budget.dailyIncome += tradeProfit;
+          npc.economy.lastTradeTime = now;
+        }
+        
+        // Hasan also earns from his field
+        if(npc.field && npc.field.owner === 'hasan'){
+          const production = fieldProduction(npc.field);
+          if(npc.field.depot && npc.field.depot.current < npc.field.depot.capacity){
+            npc.field.depot.goods.grain += production * 0.05;
+            npc.field.depot.current += production * 0.05;
+          }
+        }
+        
+        // Hasan also hires workers sometimes
+        if(now - npc.economy.lastWorkerHireTime > npc.economy.workerHireCooldown){
+          hireWorkersForOwner(npc);
+          npc.economy.lastWorkerHireTime = now;
+        }
+      }
+    }
+    
+    // Regular workers work at their assigned locations
+    if(npc.role === 'worker' && npc.economy.employer && npc.currentLocation && npc.currentLocation.atWork){
+      // Workers contribute to the field they're working on
+      if(npc.economy.workLocation){
+        const workField = village.fields.find(f => 
+          Math.abs(f.x - npc.economy.workLocation.x) < 2 && 
+          Math.abs(f.z - npc.economy.workLocation.z) < 2
+        );
+        
+        if(workField){
+          // Worker contributes to field production
+          const workerContribution = fieldProduction(workField) * 0.03; // 3% per worker
+          if(workField.depot && workField.depot.current < workField.depot.capacity){
+            workField.depot.goods.grain += workerContribution;
+            workField.depot.current += workerContribution;
+          }
+          
+          // Worker earns wage
+          const wage = 1;
+          npc.economy.gold += wage;
+          npc.economy.budget.dailyIncome += wage;
+          
+          // Employer pays wage (reduced from their economy)
+          const employer = npcs.find(n => n.id === npc.economy.employer);
+          if(employer && employer.economy.gold >= wage){
+            employer.economy.gold -= wage;
+            employer.economy.budget.dailySpending += wage;
+          }
+        }
+      }
+    }
+    
+    // Daily expenses (food consumption) - applies to all NPCs
+    const dailyFoodCost = 1;
+    if(npc.economy.gold >= dailyFoodCost){
+      npc.economy.gold -= dailyFoodCost;
+      npc.economy.budget.dailySpending += dailyFoodCost;
+    } else {
+      // NPC is struggling - might sell property
+      if(npc.economy.property.length > 0 && Math.random() < 0.05){
+        const propertyToSell = npc.economy.property.pop();
+        const salePrice = 25 + Math.floor(Math.random() * 15);
+        npc.economy.gold += salePrice;
+        village.treasury += salePrice * 0.1; // 10% tax on sale
+        
+        // Update property ownership
+        const property = village.houses.find(h => h.id === propertyToSell) || 
+                        village.fields.find(f => f.id === propertyToSell);
+        if(property){
+          property.owner = 'village';
+        }
+      }
+    }
+  }
+}
+
+function hireWorkersForOwner(owner){
+  // Find unemployed workers
+  const unemployedWorkers = npcs.filter(n => 
+    n.role === 'worker' && 
+    !n.economy.employer && 
+    n.id !== owner.id
+  );
+  
+  if(unemployedWorkers.length === 0 || owner.economy.gold < 20) return;
+  
+  // Hire up to 2 workers if owner can afford it
+  const workersToHire = Math.min(2, unemployedWorkers.length, Math.floor(owner.economy.gold / 20));
+  
+  for(let i = 0; i < workersToHire; i++){
+    const worker = unemployedWorkers[i];
+    const field = owner.role === 'village_owner' ? 
+      village.fields.find(f => f.owner === 'ali') : 
+      village.fields.find(f => f.owner === 'hasan');
+    
+    if(field){
+      // Assign worker to field
+      worker.economy.employer = owner.id;
+      worker.economy.workLocation = {x: field.x, z: field.z};
+      worker.economy.isWorking = true;
+      
+      // Add to owner's worker list
+      owner.economy.ownedWorkers.push(worker.id);
+      
+      // Owner pays hiring cost
+      owner.economy.gold -= 20;
+      owner.economy.budget.dailySpending += 20;
+      
+      // Increase field worker count
+      field.workers = Math.min(fieldWorkerCapacity(field), field.workers + 1);
+    }
+  }
+}
+
+function collectPropertyTaxes(){
+  let totalTaxCollected = 0;
+  
+  // Collect from NPC property owners
+  for(const npc of npcs){
+    if(!npc.economy || npc.economy.property.length === 0) continue;
+    
+    let npcTax = 0;
+    for(const propertyId of npc.economy.property){
+      const house = village.houses.find(h => h.id === propertyId);
+      if(house){
+        const econ = calculateHouseEconomy(house);
+        npcTax += econ.tax;
+      }
+      
+      const field = village.fields.find(f => f.id === propertyId);
+      if(field){
+        const fieldTax = fieldArea(field) * 0.5; // 0.5 gold per field area unit
+        npcTax += fieldTax;
+      }
+    }
+    
+    if(npc.economy.gold >= npcTax){
+      npc.economy.gold -= npcTax;
+      totalTaxCollected += npcTax;
+    } else {
+      // NPC can't pay tax - accumulate debt
+      npc.economy.budget.savings -= npcTax;
+    }
+  }
+  
+  // Collect from player property
+  let playerTax = 0;
+  for(const house of village.houses){
+    if(house.owner === 'player'){
+      const econ = calculateHouseEconomy(house);
+      playerTax += econ.tax;
+    }
+  }
+  
+  for(const field of village.fields){
+    if(field.owner === 'player'){
+      const fieldTax = fieldArea(field) * 0.5;
+      playerTax += fieldTax;
+    }
+  }
+  
+  if(gold >= playerTax){
+    gold -= playerTax;
+    totalTaxCollected += playerTax;
+  }
+  
+  village.treasury += totalTaxCollected;
+  if(totalTaxCollected > 0){
+    village.aiMessage = `Vergi toplandi: ${totalTaxCollected.toFixed(1)} altin kasaya eklendi.`;
+  }
+}
+
+function addPopulation(amount){
+  for(let i=0;i<amount;i++){
+    const target=village.houses.find(h=>housePopulation(h)<housingDef(h.level).maxPeople);
+    if(!target)return;
+    const family=target.families.find(f=>f.members<8);
+    if(family)family.members+=1;
+    else if(target.families.length<housingDef(target.level).families)target.families.push({members:1,activity:1});
+  }
+}
+
+function normalizeHouseFamilies(house){
+  const def=housingDef(house.level);
+  while(house.families.length<def.families&&housePopulation(house)<def.maxPeople){
+    house.families.push({members:1,activity:1+.03*house.level});
+  }
+}
+
+window.buildTerrain = function(){
+  const geo=new THREE.PlaneGeometry(360,360,12,12);
+  geo.computeVertexNormals();
+  const ground=mesh(geo,M.grass,0,0,0);
+  ground.rotation.x=-Math.PI/2;
+  ground.receiveShadow=true;
+
+  for(let i=0;i<54;i++){
+    const x=(Math.random()-.5)*330;
+    const z=(Math.random()-.5)*330;
+    if(Math.hypot(x,z)>30)plane(5+Math.random()*18,5+Math.random()*16,Math.random()>.55?M.grass2:M.dirt,x,z);
+  }
+
+  const creek=new THREE.Group();
+  plane(16,78,M.water,-48,-18,creek).rotation.z=.16;
+  creek.position.y=.025;
+  scene3.add(creek);
+
+  for(let i=0;i<70;i++){
+    const x=(Math.random()-.5)*330;
+    const z=(Math.random()-.5)*330;
+    if(Math.hypot(x,z)>18&&(Math.random()>.45))makeGrassClump(x,z,.55+Math.random()*.9);
+    else if(Math.hypot(x,z)>22)makeRock(x,z,.45+Math.random()*.8);
+  }
+}
+
+function makeRoad(ax,az,bx,bz,width=3.2){
+  return makeRoadPath([{x:ax,z:az},{x:bx,z:bz}],width);
+}
+
+function makeRoadPath(points,width=3.2){
+  for(let i=0;i<points.length-1;i++){
+    const a=points[i],b=points[i+1];
+    const sx=b.x-a.x,sz=b.z-a.z,segLen=Math.hypot(sx,sz);
+    const r=mesh(new THREE.BoxGeometry(segLen,.055,width),M.road,(a.x+b.x)/2,.045,(a.z+b.z)/2);
+    r.rotation.y=-Math.atan2(sz,sx);
+    r.receiveShadow=true;
+    roads.push({x1:a.x,z1:a.z,x2:b.x,z2:b.z,width});
+  }
+  return points;
+}
+
+function makePlaza(x,z,w,d){
+  plane(w,d,M.road,x,z);
+}
+
+function makeGrassClump(x,z,scale=1){
+  const g=new THREE.Group();
+  const count=3+Math.floor(Math.random()*4);
+  for(let i=0;i<count;i++){
+    const blade=mesh(new THREE.ConeGeometry(.11*scale,.5*scale,5),M.bush,(Math.random()-.5)*.8,.25*scale,(Math.random()-.5)*.8,g);
+    blade.rotation.z=(Math.random()-.5)*.35;
+  }
+  g.position.set(x,0,z);
+  scene3.add(g);
+  registerBlocker(`pasture_${Math.round(x)}_${Math.round(z)}`,x,z,7.4);
+}
+
+function makeRock(x,z,scale=1){
+  const r=mesh(new THREE.DodecahedronGeometry(.45*scale,0),M.rock,x,.22*scale,z);
+  r.rotation.set(Math.random(),Math.random(),Math.random());
+}
+
+function makeTree(x,z,scale=1){
+  const g=new THREE.Group();
+  mesh(new THREE.CylinderGeometry(.18*scale,.32*scale,2.1*scale,7),M.trunk,0,1.05*scale,0,g);
+  for(let i=0;i<3;i++){
+    const c=new THREE.Mesh(new THREE.ConeGeometry((1.35-i*.22)*scale,(1.9-i*.28)*scale,7),i%2?M.leaves2:M.leaves);
+    c.position.set(0,(2.25+i*.95)*scale,0);
+    c.castShadow=true;
+    g.add(c);
+  }
+  g.position.set(x,0,z);
+  g.rotation.y=Math.random()*Math.PI*2;
+  scene3.add(g);
+  trees.push(g);
+}
+
+function makeWell(x,z){
+  const g=new THREE.Group();
+  mesh(new THREE.CylinderGeometry(.92,.92,.5,14),M.stone,0,.25,0,g);
+  for(let i=0;i<4;i++){
+    const a=i/4*Math.PI*2;
+    mesh(new THREE.BoxGeometry(.13,1.35,.13),M.wood,Math.cos(a)*.66,.92,Math.sin(a)*.66,g);
+  }
+  mesh(new THREE.BoxGeometry(1.7,.12,.16),M.wood,0,1.55,0,g);
+  g.position.set(x,0,z);
+  scene3.add(g);
+  registerBlocker(`well_${Math.round(x)}_${Math.round(z)}`,x,z,1.0);
+  return g;
+}
+
+function makeMarket(x,z){
+  const g=new THREE.Group();
+  plane(8,5,M.dirt,0,0,g);
+  mesh(new THREE.BoxGeometry(7.6,.18,4.4),M.richWood,0,1.1,0,g);
+  mesh(new THREE.BoxGeometry(8.1,.16,2.4),M.roof,0,2.15,1.9,g);
+  mesh(new THREE.BoxGeometry(1.8,.45,.12),M.thatch,0,3.1,1.15,g);
+  [-3.2,3.2].forEach(px=>mesh(new THREE.BoxGeometry(.16,2.15,.16),M.wood,px,1.05,2,g));
+  g.position.set(x,0,z);
+  scene3.add(g);
+  registerBlocker(`market_${Math.round(x)}_${Math.round(z)}`,x,z,3.5);
+  return g;
+}
+
+function makeGranary(x,z){
+  const g=new THREE.Group();
+  mesh(new THREE.BoxGeometry(3.5,2.4,4.2),M.wood,0,1.2,0,g);
+  mesh(new THREE.ConeGeometry(3.0,1.4,4),M.thatch,0,3.1,0,g).rotation.y=Math.PI/4;
+  for(let px of[-1.35,1.35])for(let pz of[-1.6,1.6])mesh(new THREE.CylinderGeometry(.1,.1,.8,6),M.darkstone,px,.4,pz,g);
+  g.position.set(x,0,z);
+  scene3.add(g);
+  registerBlocker(`granary_${Math.round(x)}_${Math.round(z)}`,x,z,2.2);
+}
+
+function materialForHouse(def){return M[def.material]||M.wood}
+
+function createHouseMesh(house){
+  const def=housingDef(house.level);
+  const g=new THREE.Group();
+  const s=def.scale;
+  const bodyH=(def.floors?3.2:2.05)*s;
+  if(def.garden){
+    plane(4.8*s,4.4*s,M.grass2,0,0,g);
+    makeFence(g,2.4*s,2.2*s);
+  }
+  mesh(new THREE.BoxGeometry(2.7*s,bodyH,2.55*s),materialForHouse(def),0,bodyH/2,0,g);
+  if(def.blocks){
+    mesh(new THREE.BoxGeometry(2.1*s,bodyH*.92,2.3*s),materialForHouse(def),2.25*s,bodyH*.46,0,g);
+  }
+  const roof=new THREE.Mesh(new THREE.ConeGeometry(2.15*s,1.35*s,4),def.level<3?M.thatch:M.roof);
+  roof.position.set(def.blocks?1.05*s:0,bodyH+.65*s,0);
+  roof.rotation.y=Math.PI/4;
+  roof.castShadow=true;
+  g.add(roof);
+  mesh(new THREE.BoxGeometry(.52*s,.95*s,.08*s),M.darkstone,0,.48*s,1.3*s,g);
+  mesh(new THREE.BoxGeometry(.32*s,.8*s,.32*s),M.darkstone,.72*s,bodyH+1.1*s,-.55*s,g);
+  mesh(new THREE.BoxGeometry(.42*s,.38*s,.08*s),M.clothBlue,-.75*s,1.15*s,1.31*s,g);
+  mesh(new THREE.BoxGeometry(.42*s,.38*s,.08*s),M.clothRed,.75*s,1.15*s,1.31*s,g);
+  mesh(new THREE.BoxGeometry(.8*s,.25*s,.35*s),M.wood,-1.45*s,.14*s,1.35*s,g);
+  mesh(new THREE.CylinderGeometry(.18*s,.18*s,.55*s,8),M.wood,1.45*s,.28*s,1.22*s,g).rotation.z=Math.PI/2;
+  if(def.level<=3){
+    mesh(new THREE.ConeGeometry(.45*s,.7*s,7),M.straw,-1.25*s,.35*s,-1.25*s,g);
+  }else{
+    mesh(new THREE.BoxGeometry(.75*s,.55*s,.75*s),M.stone,-1.35*s,.28*s,-1.25*s,g);
+  }
+  if(def.courtyard)makeFence(g,3.4*s,3.1*s);
+  g.position.set(house.x,0,house.z);
+  g.rotation.y=house.rot;
+  scene3.add(g);
+  registerBlocker(`house_${house.id}`,house.x,house.z,1.6*s);
+  return g;
+}
+
+function makeFence(parent,w,d){
+  for(let x=-w;x<=w+.01;x+=.9){
+    mesh(new THREE.BoxGeometry(.08,.5,.08),M.wood,x,.25,-d,parent);
+    mesh(new THREE.BoxGeometry(.08,.5,.08),M.wood,x,.25,d,parent);
+  }
+  for(let z=-d;z<=d+.01;z+=.9){
+    mesh(new THREE.BoxGeometry(.08,.5,.08),M.wood,-w,.25,z,parent);
+    mesh(new THREE.BoxGeometry(.08,.5,.08),M.wood,w,.25,z,parent);
+  }
+}
+
+function refreshHouseMesh(house){
+  if(house.mesh)scene3.remove(house.mesh);
+  house.mesh=createHouseMesh(house);
+  const inter=interactables.find(i=>i.type==='house'&&i.houseId===house.id);
+  if(inter){inter.x=house.x;inter.z=house.z;inter.name=`${house.name} (${house.level}. seviye)`}
+}
+
+function createFieldMesh(field){
+  const g=new THREE.Group();
+  const area=fieldArea(field);
+  const side=Math.sqrt(area)*.58;
+  plane(side,side*.74,M.dirt,0,0,g);
+  makeFence(g,side/2,side*.37);
+  const rows=Math.max(3,Math.min(9,Math.floor(side/2.4)));
+  for(let r=0;r<rows;r++){
+    const z=-side*.25+r*(side*.5/Math.max(1,rows-1));
+    const strip=mesh(new THREE.BoxGeometry(side*.72,.16,.34),r%2?M.cropGreen:M.crop,0,.12,z,g);
+    strip.receiveShadow=true;
+  }
+  mesh(new THREE.BoxGeometry(1.6,.8,1.4),M.wood,-side*.33,.42,-side*.25,g);
+  g.position.set(field.x,0,field.z);
+  g.rotation.y=field.rot;
+  scene3.add(g);
+  return g;
+}
+
+function refreshFieldMesh(field){
+  if(field.mesh)scene3.remove(field.mesh);
+  field.mesh=createFieldMesh(field);
+  const inter=interactables.find(i=>i.type==='field'&&i.fieldId===field.id);
+  if(inter){inter.x=field.x;inter.z=field.z;inter.name=field.name}
+}
+
+function createPlotMesh(plot){
+  const g=new THREE.Group();
+  plane(6.2,5.2,M.plot,0,0,g);
+  makeFence(g,3.1,2.6);
+  g.position.set(plot.x,0,plot.z);
+  g.rotation.y=plot.rot;
+  scene3.add(g);
+  plot.mesh=g;
+  registerBlocker(`plot_${plot.id}`,plot.x,plot.z,.5);
+}
+
+function buildHouseOnPlot(plot,owner){
+  plot.owner=owner;
+  plot.built=true;
+  if(plot.mesh)scene3.remove(plot.mesh);
+  const house={
+    id:`house_${village.houses.length+1}`,
+    name:`Ekinli Evi ${village.houses.length+1}`,
+    level:1,x:plot.x,z:plot.z,rot:plot.rot,owner,
+    families:[{members:1+Math.floor(Math.random()*2),activity:.9}]
+  };
+  house.mesh=createHouseMesh(house);
+  village.houses.push(house);
+  interactables.push({type:'house',x:house.x,z:house.z,houseId:house.id,name:`${house.name} (1. seviye)`});
+  const inter=interactables.find(i=>i.type==='plot'&&i.plotId===plot.id);
+  if(inter)inter.disabled=true;
+  recalculateVillage();
+}
+
+function makePersonMesh(role){
+  const g=new THREE.Group();
+  const mat=role==='child'?M.child:role==='elder'?M.elder:role==='trader'?M.trader:role==='leader'?M.leader:M.cloth;
+  const height=role==='child'?.72:1;
+  mesh(new THREE.BoxGeometry(.42,.72*height,.3),mat,0,.46*height,0,g);
+  mesh(new THREE.BoxGeometry(.31,.31,.31),M.skin,0,.91*height,0,g);
+  mesh(new THREE.BoxGeometry(.16,.46*height,.14),mat,-.34,.48*height,0,g);
+  mesh(new THREE.BoxGeometry(.16,.46*height,.14),mat,.34,.48*height,0,g);
+  const legMat=new THREE.MeshLambertMaterial({color:0x2f281d});
+  const lL=mesh(new THREE.BoxGeometry(.18,.54*height,.18),legMat,-.11,.08*height,0,g);
+  const lR=mesh(new THREE.BoxGeometry(.18,.54*height,.18),legMat,.11,.08*height,0,g);
+  if(role==='farmer'||role==='worker'){
+    const tool=mesh(new THREE.BoxGeometry(.08,.9,.08),M.wood,.52,.58,0,g);
+    tool.rotation.z=.5;
+  }
+  if(role==='trader'){
+    mesh(new THREE.BoxGeometry(.5,.24,.34),M.straw,.5,.55,0,g);
+  }
+  if(role==='leader'){
+    mesh(new THREE.CylinderGeometry(.2,.24,.18,8),M.roof,0,1.1*height,0,g);
+  }
+  if(role==='elder'){
+    mesh(new THREE.BoxGeometry(.06,.8,.06),M.wood,.46,.36,0,g);
+  }
+  g.userData={lL,lR};
+  return g;
+}
+
+function createAliNPC(){
+  // Ali owns 3 fields and is the village leader
+  const aliHome = village.houses[0]; // First house
+  const g=makePersonMesh('leader');
+  g.position.set(aliHome.x, 0, aliHome.z);
+  scene3.add(g);
+  
+  // Give Ali ownership of first 3 fields
+  village.fields[0].owner = 'ali';
+  village.fields[1].owner = 'ali'; 
+  village.fields[2].owner = 'ali';
+  
+  const ali={
+    id:0,
+    name:'Ali (Koy Sahibi)',
+    role:'village_owner',
+    g,
+    home:aliHome,
+    field:village.fields[0], // Primary field
+    settlement:village,
+    target:{x:aliHome.x,z:aliHome.z},
+    wait:Math.random()*2,
+    phase:Math.random()*6.28,
+    spd:1.0+Math.random()*.3,
+    
+    // Ali's economy - village owner with substantial resources
+    economy: {
+      gold: 150, // Starting with good money
+      inventory: {
+        grain: 15,
+        meat: 8,
+        wood: 12,
+        tools: 5
+      },
+      property: ['house_1', 'field_1', 'field_2', 'field_3'], // Owns house and 3 fields
+      lastTradeTime: 0,
+      tradeCooldown: 15000, // More frequent trading
+      budget: {
+        dailySpending: 0,
+        dailyIncome: 0,
+        savings: 150
+      },
+      ownedWorkers: [], // Will track hired workers
+      lastWorkerHireTime: 0,
+      workerHireCooldown: 30000
+    }
+  };
+  
+  ali.interactable={type:'npc',x:aliHome.x,z:aliHome.z,npcId:0,name:ali.name};
+  interactables.push(ali.interactable);
+  npcs.push(ali);
+}
+
+function createHasanNPC(){
+  // Hasan is a trader with 1 field
+  const hasanHome = village.houses[1]; // Second house
+  const g=makePersonMesh('trader');
+  g.position.set(hasanHome.x, 0, hasanHome.z);
+  scene3.add(g);
+  
+  // Give Hasan ownership of field 4
+  village.fields[3].owner = 'hasan';
+  
+  const hasan={
+    id:1,
+    name:'Hasan (Tuccar)',
+    role:'trader_owner',
+    g,
+    home:hasanHome,
+    field:village.fields[3], // His field
+    settlement:village,
+    target:{x:hasanHome.x,z:hasanHome.z},
+    wait:Math.random()*2,
+    phase:Math.random()*6.28,
+    spd:1.0+Math.random()*.3,
+    
+    // Hasan's economy - trader with moderate resources
+    economy: {
+      gold: 80, // Starting money for trading
+      inventory: {
+        grain: 8,
+        meat: 5,
+        wood: 6,
+        tools: 3
+      },
+      property: ['house_2', 'field_4'], // Owns house and 1 field
+      lastTradeTime: 0,
+      tradeCooldown: 10000, // Very frequent trading
+      budget: {
+        dailySpending: 0,
+        dailyIncome: 0,
+        savings: 80
+      },
+      ownedWorkers: [], // Can hire workers too
+      lastWorkerHireTime: 0,
+      workerHireCooldown: 30000,
+      tradeDestinations: ['akpinar', 'demirtas', 'sogutlu'], // Trade villages
+      currentTradeTarget: null
+    }
+  };
+  
+  hasan.interactable={type:'npc',x:hasanHome.x,z:hasanHome.z,npcId:1,name:hasan.name};
+  interactables.push(hasan.interactable);
+  npcs.push(hasan);
+}
+
+function createNPC(role,home,field,index,settlement=village){
+  const g=makePersonMesh(role);
+  const hx=home.x+(Math.random()-.5)*2.4;
+  const hz=home.z+(Math.random()-.5)*2.4;
+  g.position.set(hx,0,hz);
+  scene3.add(g);
+  
+  // Initialize NPC personal economy
+  const npc={
+    id:index,
+    name:npcName(role,index),
+    role,
+    g,
+    home,
+    field,
+    settlement,
+    target:{x:hx,z:hz},
+    wait:Math.random()*2,
+    phase:Math.random()*6.28,
+    spd:1.0+Math.random()*.45,
+    
+    // Personal economy system
+    economy: {
+      gold: 15 + Math.floor(Math.random() * 20), // Starting gold 15-35 (less for workers)
+      inventory: {
+        grain: Math.floor(Math.random() * 3),
+        meat: Math.floor(Math.random() * 1),
+        wood: Math.floor(Math.random() * 2),
+        tools: Math.floor(Math.random() * 1)
+      },
+      property: [], // Workers don't own property initially
+      lastTradeTime: 0,
+      tradeCooldown: 45000, // Longer cooldown for workers
+      budget: {
+        dailySpending: 0,
+        dailyIncome: 0,
+        savings: 0
+      },
+      employer: null, // Will be set when hired by Ali or Hasan
+      workLocation: null, // Where they should work
+      isWorking: false
+    }
+  };
+  
+  npc.interactable={type:'npc',x:hx,z:hz,npcId:index,name:npc.name};
+  interactables.push(npc.interactable);
+  npcs.push(npc);
+}
+
+function npcName(role,index){
+  const titles={farmer:'Ciftci',worker:'Isci',child:'Cocuk',elder:'Yasli',trader:'Tüccar',leader:'Koy lideri'};
+  return `${titles[role]||'Koylu'} ${index+1}`;
+}
+
+function chooseNpcAnchor(npc,phase){
+  const home=frontOf(npc.home,2.8);
+  const market={x:4,z:2};
+  
+  // Night/evening: everyone goes home
+  if(phase==='night'||phase==='evening') return {x:home.x+(Math.random()-.5)*4, z:home.z+(Math.random()-.5)*4};
+  
+  // Ali - village owner, rotates between his 3 fields
+  if(npc.role==='village_owner'){
+    const aliFields=village.fields.filter(f=>f.owner==='ali');
+    if(aliFields.length>0){
+      const targetField=aliFields[Math.floor(Date.now()/30000)%aliFields.length];
+      return {x:targetField.x+(Math.random()-.5)*3, z:targetField.z+(Math.random()-.5)*3};
+    }
+    return {x:home.x+(Math.random()-.5)*4, z:home.z+(Math.random()-.5)*4};
+  }
+  
+  // Hasan - trader, goes to market or his field
+  if(npc.role==='trader_owner'){
+    if(Math.random()<0.5){
+      return {x:market.x+(Math.random()-.5)*3, z:market.z+(Math.random()-.5)*3};
+    }
+    const hasanField=village.fields.find(f=>f.owner==='hasan');
+    if(hasanField) return {x:hasanField.x+(Math.random()-.5)*3, z:hasanField.z+(Math.random()-.5)*3};
+    return {x:market.x+(Math.random()-.5)*3, z:market.z+(Math.random()-.5)*3};
+  }
+  
+  // Employed workers - go to their assigned field
+  if(npc.role==='worker' && npc.economy.employer && npc.economy.workLocation){
+    return {x:npc.economy.workLocation.x+(Math.random()-.5)*3, z:npc.economy.workLocation.z+(Math.random()-.5)*3};
+  }
+  
+  // Unemployed workers - wander near their home or around village edges
+  if(npc.role==='worker'){
+    const wanderPoints=[
+      {x:home.x+(Math.random()-.5)*8, z:home.z+(Math.random()-.5)*8},
+      {x:-15+(Math.random()-.5)*6, z:5+(Math.random()-.5)*6},
+      {x:15+(Math.random()-.5)*6, z:5+(Math.random()-.5)*6},
+      {x:0+(Math.random()-.5)*6, z:-15+(Math.random()-.5)*6}
+    ];
+    return wanderPoints[Math.floor(Math.random()*wanderPoints.length)];
+  }
+  
+  // Elder - stays near home
+  if(npc.role==='elder'){
+    return {x:home.x+(Math.random()-.5)*5, z:home.z+(Math.random()-.5)*5};
+  }
+  
+  // Trader in other villages
+  if(npc.role==='trader'){
+    return {x:market.x+(Math.random()-.5)*4, z:market.z+(Math.random()-.5)*4};
+  }
+  
+  // Default: wander near home
+  return {x:home.x+(Math.random()-.5)*6, z:home.z+(Math.random()-.5)*6};
+}
+
+// Global function to check if position is near a road
+function isNearRoad(x, z, threshold = 8) {
+  // Check main roads
+  const mainRoadPoints = [
+    {x:-85,z:0},{x:-60,z:2},{x:-35,z:5},{x:-15,z:8},{x:0,z:10},{x:15,z:8},{x:35,z:5},{x:60,z:2},{x:85,z:0},
+    {x:0,z:10},{x:2,z:25},{x:5,z:45},{x:8,z:65},{x:10,z:85},
+    {x:0,z:10},{x:-2,z:-25},{x:-5,z:-45},{x:-8,z:-65},{x:-10,z:-85}
+  ];
+  
+  for (let point of mainRoadPoints) {
+    if (Math.hypot(x - point.x, z - point.z) < threshold) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function updateNPCs(dt,gt){
+  const phase=getDayPhase();
+  for(const npc of npcs){
+    if(npc.wait>0){npc.wait-=dt}
+    
+    // Get the FINAL destination for this NPC based on time of day
+    const destination=chooseNpcAnchor(npc,phase.key);
+    
+    // Distance to final destination
+    const distToDest=Math.hypot(destination.x-npc.g.position.x,destination.z-npc.g.position.z);
+    
+    // Distance to current waypoint
+    const distToTarget=Math.hypot(npc.target.x-npc.g.position.x,npc.target.z-npc.g.position.z);
+    
+    // Need a new waypoint if: reached current waypoint, or wait expired, or far from destination
+    if(distToTarget<1.0||npc.wait<=0||distToDest>25){
+      // Move directly toward the destination - use destination as target
+      // This ensures NPCs actually reach their fields/work locations
+      npc.target.x=destination.x;
+      npc.target.z=destination.z;
+      npc.wait=3+Math.random()*2;
+    }
+    
+    // Move towards current target
+    const dx=npc.target.x-npc.g.position.x;
+    const dz=npc.target.z-npc.g.position.z;
+    const d=Math.hypot(dx,dz);
+    
+    if(d>.1){
+      npc.g.position.x+=dx/d*npc.spd*dt;
+      npc.g.position.z+=dz/d*npc.spd*dt;
+      npc.g.rotation.y=Math.atan2(dx,dz);
+      
+      // Walking animation
+      const walk=Math.sin(gt*7+npc.phase)*.28;
+      npc.g.userData.lL.rotation.x=walk;
+      npc.g.userData.lR.rotation.x=-walk;
+    }
+    
+    // Update interactable position
+    npc.interactable.x=npc.g.position.x;
+    npc.interactable.z=npc.g.position.z;
+    npc.g.position.y=0;
+    
+    // Track NPC work status based on proximity to work location
+    const isNearWorkLocation = npc.economy.workLocation && 
+      Math.hypot(npc.g.position.x-npc.economy.workLocation.x, npc.g.position.z-npc.economy.workLocation.z) < 5;
+    const isNearField = npc.field && 
+      Math.hypot(npc.g.position.x-npc.field.x, npc.g.position.z-npc.field.z) < 5;
+    
+    npc.currentLocation = {
+      phase: phase.key,
+      atWork: (phase.key==='work'||phase.key==='morning') && 
+              (npc.role==='worker'||npc.role==='village_owner'||npc.role==='trader_owner') &&
+              (isNearWorkLocation||isNearField),
+      atMarket: phase.key!=='night' && phase.key!=='evening' && npc.role==='trader_owner',
+      atHome: phase.key==='night'||phase.key==='evening'
+    };
+  }
+}
+
+function makePlayer(){
+  const g=new THREE.Group();
+  // Make player unique with blue color instead of default player color
+  mesh(new THREE.BoxGeometry(.52,.9,.32),new THREE.MeshLambertMaterial({color:0x2e5f8e}),0,.78,0,g);
+  mesh(new THREE.BoxGeometry(.34,.34,.34),M.skin,0,1.38,0,g);
+  PL.aL=mesh(new THREE.BoxGeometry(.18,.62,.18),M.player,-.36,.78,0,g);
+  PL.aR=mesh(new THREE.BoxGeometry(.18,.62,.18),M.player,.36,.78,0,g);
+  PL.lL=mesh(new THREE.BoxGeometry(.22,.66,.2),M.darkstone,-.13,.25,0,g);
+  PL.lR=mesh(new THREE.BoxGeometry(.22,.66,.2),M.darkstone,.13,.25,0,g);
+  g.position.copy(PL.pos);
+  scene3.add(g);
+  PL.g=g;
+}
+
+function createInitialVillageData(){
+  const houseLayout=[
+    [-32,-18,0],[ -8,-18,0],[ 8,-18,0],[32,-18,0],
+    [-32,18,Math.PI],[ -8,18,Math.PI],[8,18,Math.PI],[32,18,Math.PI],
+    [-12,32,Math.PI/2],[12,32,-Math.PI/2]
+  ];
+  houseLayout.forEach((h,i)=>{
+    const house={
+      id:`house_${i+1}`,name:`Ekinli Evi ${i+1}`,level:1,x:h[0],z:h[1],rot:h[2],owner:'village',
+      families:[{members:1+(i%2),activity:.82+.04*(i%3)}]
+    };
+    house.mesh=createHouseMesh(house);
+    village.houses.push(house);
+    interactables.push({type:'house',x:house.x,z:house.z,houseId:house.id,name:`${house.name} (1. seviye)`});
+  });
+
+  const fieldLayout=[
+    ['Kuzey Tarlasi',-25,55,0,1,95,760,2,1.08,1.0,.94],
+    ['Degirmen Tarlasi',-70,20,0,1,110,930,2,1.12,1.04,.96],
+    ['Guney Tarlasi',-25,-60,0,1,85,700,1,.96,.96,.92],
+    ['Cayir Tarlasi',25,-60,0,1,70,650,1,1.02,.92,.9],
+    ['Bataklik Kenari',-70,-25,0,1,90,840,1,.9,.84,.86],
+    ['Buyuk Ova',70,-35,0,1,120,1100,2,1.16,1.0,.95],
+    ['Eski Tarla',70,15,0,1,72,600,1,.88,.9,.82]
+  ];
+  fieldLayout.forEach((f,i)=>{
+    const field={id:`field_${i+1}`,name:f[0],x:f[1],z:f[2],rot:f[3],level:f[4],baseArea:f[5],maxArea:f[6],workers:f[7],fertility:f[8],irrigation:f[9],maintenance:f[10],owner:'village'};
+    field.mesh=createFieldMesh(field);
+    village.fields.push(field);
+    interactables.push({type:'field',x:field.x,z:field.z,fieldId:field.id,name:field.name});
+  });
+
+  const plotLayout=[[38,-14,0],[38,0,0],[38,14,0],[22,28,Math.PI],[-22,28,Math.PI],[-38,0,0]];
+  plotLayout.forEach((p,i)=>{
+    const plot={id:`plot_${i+1}`,x:p[0],z:p[1],rot:p[2],owner:null,built:false};
+    village.plots.push(plot);
+    createPlotMesh(plot);
+    interactables.push({type:'plot',x:plot.x,z:plot.z,plotId:plot.id,name:'Bos arazi'});
+  });
+}
+
+function createTradeVillageData(){
+  village.market=createMarket({
+    grain:{stock:120,demand:38,production:2.2,consumption:.35},
+    meat:{stock:24,demand:28,production:.55,consumption:.2},
+    leather:{stock:12,demand:20,production:.2,consumption:.08},
+    wood:{stock:45,demand:35,production:.18,consumption:.16},
+    iron:{stock:8,demand:42,production:.02,consumption:.07},
+    cloth:{stock:14,demand:32,production:.04,consumption:.08},
+    tools:{stock:8,demand:36,production:.02,consumption:.06}
+  });
+  village.priceBias={grain:-.18,meat:-.05,iron:.2,tools:.15};
+  village.idealDemand={grain:38,meat:26,leather:22,wood:34,iron:44,cloth:32,tools:36};
+
+  const defs=[
+    {
+      id:'akpinar',name:'Akpinar',type:'woodland',x:-98,z:84,icon:'Orman koyu',
+      profile:{wood:{stock:130,demand:25,production:2.4,consumption:.22},grain:{stock:24,demand:58,production:.12,consumption:.45},meat:{stock:18,demand:34,production:.18,consumption:.18},leather:{stock:30,demand:22,production:.45,consumption:.08},iron:{stock:8,demand:40,production:.02,consumption:.06}},
+      bias:{wood:-.28,grain:.24,iron:.18},ideal:{grain:58,wood:24,meat:34,leather:22,iron:40,cloth:28,tools:34}
+    },
+    {
+      id:'demirtas',name:'Demirtas',type:'mining',x:-102,z:-78,icon:'Maden koyu',
+      profile:{iron:{stock:145,demand:24,production:2.2,consumption:.18},tools:{stock:34,demand:26,production:.45,consumption:.1},grain:{stock:18,demand:70,production:.04,consumption:.52},wood:{stock:20,demand:54,production:.05,consumption:.25},meat:{stock:14,demand:42,production:.05,consumption:.18}},
+      bias:{iron:-.3,tools:-.12,grain:.32,wood:.2},ideal:{grain:70,wood:54,iron:24,tools:26,meat:42,leather:30,cloth:34}
+    },
+    {
+      id:'sogutlu',name:'Sogutlu',type:'pasture',x:102,z:-66,icon:'Hayvan koyu',
+      profile:{meat:{stock:105,demand:24,production:1.6,consumption:.18},leather:{stock:86,demand:24,production:1.1,consumption:.1},grain:{stock:26,demand:62,production:.12,consumption:.48},wood:{stock:28,demand:38,production:.08,consumption:.18},cloth:{stock:12,demand:34,production:.02,consumption:.08}},
+      bias:{meat:-.24,leather:-.25,grain:.26,cloth:.18},ideal:{grain:62,meat:24,leather:24,wood:38,iron:36,cloth:34,tools:30}
+    },
+    {
+      id:'pazarli',name:'Pazarli',type:'trade',x:104,z:90,icon:'Pazar koyu',
+      profile:{cloth:{stock:95,demand:28,production:1.2,consumption:.12},tools:{stock:42,demand:30,production:.32,consumption:.08},grain:{stock:44,demand:52,production:.08,consumption:.4},meat:{stock:34,demand:42,production:.04,consumption:.22},wood:{stock:36,demand:42,production:.06,consumption:.18},iron:{stock:38,demand:38,production:.08,consumption:.14}},
+      bias:{cloth:-.24,tools:-.08,grain:.12,meat:.08},ideal:{grain:52,meat:42,wood:42,iron:38,cloth:28,tools:30,leather:36}
+    }
+  ];
+  for(const def of defs){
+    tradeVillages.push({
+      ...def,
+      treasury:90,
+      population:28+Math.floor(Math.random()*18),
+      market:createMarket(def.profile),
+      priceBias:def.bias,
+      idealDemand:def.ideal,
+      mesh:null
+    });
+  }
+}
+
+function buildTradeVillages(){
+  for(const tv of tradeVillages){
+    makeTradeVillageMesh(tv);
+    interactables.push({type:'tradeVillage',x:tv.x,z:tv.z,settlementId:tv.id,name:tv.name});
+  }
+}
+
+function makeTradeVillageMesh(tv){
+  const g=new THREE.Group();
+  plane(24,18,M.dirt,0,0,g);
+  g.position.set(tv.x,0,tv.z);
+  scene3.add(g);
+  makeWell(tv.x,tv.z);
+  makeMarket(tv.x+4,tv.z+2);
+  for(let i=0;i<5;i++){
+    const a=i/5*Math.PI*2+.25;
+    const d=8+Math.random()*4;
+    const house={id:`${tv.id}_h_${i}`,name:`${tv.name} evi`,level:1+Math.floor(Math.random()*3),x:tv.x+Math.cos(a)*d,z:tv.z+Math.sin(a)*d,rot:a,owner:'village',families:[{members:2,activity:.9}]};
+    createHouseMesh(house);
+  }
+  if(tv.type==='woodland'){
+    for(let i=0;i<28;i++)makeTree(tv.x+(Math.random()-.5)*34,tv.z+(Math.random()-.5)*34,.5+Math.random()*.55);
+    makeResourceStack(tv.x-6,tv.z-4,'wood');
+  }
+  if(tv.type==='mining'){
+    for(let i=0;i<12;i++)makeRock(tv.x-10+Math.random()*16,tv.z-12+Math.random()*16,.8+Math.random()*.9);
+    makeResourceStack(tv.x-5,tv.z-5,'iron');
+  }
+  if(tv.type==='pasture'){
+    makePasture(tv.x-7,tv.z-7);
+  }
+  if(tv.type==='trade'){
+    makeGranary(tv.x-6,tv.z-5);
+    makeResourceStack(tv.x+9,tv.z-3,'cloth');
+  }
+  // Reduce traders by 80% - only create 1 trader per village instead of 5
+  for(let i=0;i<2;i++){
+    const home={x:tv.x+(Math.random()-.5)*10,z:tv.z+(Math.random()-.5)*8,name:`${tv.name} evi`};
+    const work={x:tv.x+4+(Math.random()-.5)*5,z:tv.z+2+(Math.random()-.5)*5,name:`${tv.name} pazari`};
+    const role=i===0?'trader':'elder'; // Only 1 trader and 1 elder per village
+    createNPC(role,home,work,npcs.length,tv);
+  }
+  tv.mesh=g;
+}
+
+function makeResourceStack(x,z,type){
+  const g=new THREE.Group();
+  if(type==='wood'){
+    for(let i=0;i<5;i++)mesh(new THREE.CylinderGeometry(.14,.14,2.1,7),M.wood,(i-2)*.28,.25,0,g).rotation.z=Math.PI/2;
+  }else if(type==='iron'){
+    for(let i=0;i<5;i++)mesh(new THREE.DodecahedronGeometry(.34,0),M.rock,(Math.random()-.5)*1.4,.28,(Math.random()-.5)*1.2,g);
+  }else{
+    for(let i=0;i<4;i++)mesh(new THREE.BoxGeometry(.7,.34,.5),i%2?M.clothBlue:M.clothRed,(i-1.5)*.55,.18,0,g);
+  }
+  g.position.set(x,0,z);
+  scene3.add(g);
+  registerBlocker(`stack_${type}_${Math.round(x)}_${Math.round(z)}`,x,z,1.0);
+}
+
+window.buildWorld = function(){
+  setP(8,'Dogal arazi temizleniyor...');
+  buildTerrain();
+  setP(20,'Ekinli merkezi kuruluyor...');
+  makePlaza(0,0,18,12);
+  makeWell(-4,0);
+  makeMarket(8,7);
+  makeGranary(-8,-7);
+  interactables.push({type:'village',x:0,z:0,name:'Ekinli koy merkezi'});
+
+  createTradeVillageData();
+  createInitialVillageData();
+  setP(44,'Toprak yollar aciliyor...');
+  // Main organic road through village center
+  makeRoadPath([
+    {x:-85,z:0},{x:-60,z:2},{x:-35,z:5},{x:-15,z:8},{x:0,z:10},{x:15,z:8},{x:35,z:5},{x:60,z:2},{x:85,z:0}
+  ], 3.8);
+  
+  // Curved side roads
+  makeRoadPath([
+    {x:0,z:10},{x:2,z:25},{x:5,z:45},{x:8,z:65},{x:10,z:85}
+  ], 3.2);
+  
+  makeRoadPath([
+    {x:0,z:10},{x:-2,z:-25},{x:-5,z:-45},{x:-8,z:-65},{x:-10,z:-85}
+  ], 3.2);
+  
+  // Organic village internal paths
+  makeRoadPath([
+    {x:-35,z:5},{x:-38,z:25},{x:-42,z:45},{x:-45,z:65}
+  ], 2.4);
+  
+  makeRoadPath([
+    {x:35,z:5},{x:38,z:25},{x:42,z:45},{x:45,z:65}
+  ], 2.4);
+  
+  // Curved connecting roads
+  makeRoadPath([
+    {x:-35,z:5},{x:-25,z:-15},{x:-15,z:-25},{x:-5,z:-35},{x:5,z:-45},{x:15,z:-55},{x:25,z:-65},{x:35,z:-75}
+  ], 2.8);
+  
+  makeRoadPath([
+    {x:35,z:5},{x:25,z:15},{x:15,z:25},{x:5,z:35},{x:-5,z:45},{x:-15,z:55},{x:-25,z:65},{x:-35,z:75}
+  ], 2.8);
+  
+  // Access roads to fields and special areas
+  makeRoadPath([
+    {x:85,z:0},{x:95,z:15},{x:105,z:35},{x:110,z:55}
+  ], 2.6);
+  
+  makeRoadPath([
+    {x:-85,z:0},{x:-95,z:15},{x:-105,z:35},{x:-110,z:55}
+  ], 2.6);
+
+  setP(62,'Hayvancilik alani ekleniyor...');
+  makePasture(34,-44);
+  buildTradeVillages();
+
+  setP(76,'Koyluler yerlestiriliyor...');
+  makePlayer();
+  
+  // Create special NPCs - Ali and Hasan
+  createAliNPC();
+  createHasanNPC();
+  
+  // Create regular worker NPCs
+  const workerRoles=['worker','worker','worker','worker','worker','elder'];
+  workerRoles.forEach((role,i)=>{
+    const home=village.houses[i%village.houses.length];
+    const field=village.fields[i%village.fields.length];
+    createNPC(role,home,field,i+2); // +2 to skip Ali and Hasan
+  });
+
+  setP(88,'Cevre agaclandiriliyor...');
+  
+  // Organic tree clusters instead of random placement
+  const treeClusters = [
+    {centerX: -70, centerZ: -40, radius: 25, count: 20},
+    {centerX: 70, centerZ: -35, radius: 30, count: 25},
+    {centerX: -65, centerZ: 45, radius: 20, count: 15},
+    {centerX: 60, centerZ: 50, radius: 25, count: 20},
+    {centerX: -90, centerZ: 70, radius: 15, count: 10},
+    {centerX: 85, centerZ: 65, radius: 20, count: 15},
+    {centerX: 0, centerZ: -90, radius: 18, count: 12},
+    {centerX: 0, centerZ: 90, radius: 18, count: 12},
+    {centerX: -40, centerZ: -70, radius: 15, count: 8},
+    {centerX: 40, centerZ: 70, radius: 15, count: 8}
+  ];
+  
+  for (let cluster of treeClusters) {
+    for (let i = 0; i < cluster.count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const distance = Math.random() * cluster.radius;
+      const x = cluster.centerX + Math.cos(angle) * distance + (Math.random() - 0.5) * 8;
+      const z = cluster.centerZ + Math.sin(angle) * distance + (Math.random() - 0.5) * 8;
+      
+      // Don't plant trees on roads or too close to village center
+      if (!isNearRoad(x, z) && Math.hypot(x, z) > 25) {
+        const scale = 0.5 + Math.random() * 0.7;
+        makeTree(x, z, scale);
+      }
+    }
+  }
+
+  recalculateVillage();
+  setP(100,'Hazir.');
+}
+
+function makePasture(x,z){
+  const g=new THREE.Group();
+  
+  // Create organic, irregular pasture shape
+  const pasturePoints = [];
+  const numPoints = 8;
+  for (let i = 0; i < numPoints; i++) {
+    const angle = (i / numPoints) * Math.PI * 2;
+    const radius = 6 + Math.random() * 4; // Irregular radius
+    const px = Math.cos(angle) * radius;
+    const pz = Math.sin(angle) * radius;
+    pasturePoints.push({x: px, z: pz});
+  }
+  
+  // Create organic pasture surface using multiple smaller planes
+  for (let i = 0; i < 5; i++) {
+    const offsetX = (Math.random() - 0.5) * 8;
+    const offsetZ = (Math.random() - 0.5) * 6;
+    const width = 4 + Math.random() * 3;
+    const depth = 3 + Math.random() * 2;
+    plane(width, depth, M.grass2, offsetX, offsetZ, g);
+  }
+  
+  // Create curved fence following pasture shape
+  for (let i = 0; i < pasturePoints.length; i++) {
+    const p1 = pasturePoints[i];
+    const p2 = pasturePoints[(i + 1) % pasturePoints.length];
+    
+    // Create fence segments between points
+    const segments = 3;
+    for (let j = 0; j < segments; j++) {
+      const t = j / segments;
+      const fx = p1.x + (p2.x - p1.x) * t;
+      const fz = p1.z + (p2.z - p1.z) * t;
+      mesh(new THREE.BoxGeometry(.08,.5,.08),M.wood,fx,.25,fz,g);
+    }
+  }
+  
+  // Place animals in natural groups
+  const animalGroups = [
+    {centerX: -2, centerZ: -1, count: 3},
+    {centerX: 2, centerZ: 1, count: 2},
+    {centerX: 0, centerZ: 2, count: 2}
+  ];
+  
+  for (let group of animalGroups) {
+    for (let i = 0; i < group.count; i++) {
+      const cow = new THREE.Group();
+      mesh(new THREE.BoxGeometry(.75,.45,1.05),M.animal,0,.42,0,cow);
+      mesh(new THREE.BoxGeometry(.38,.34,.34),M.animal,0,.66,.58,cow);
+      for(let px of[-.25,.25])for(let pz of[-.32,.32])mesh(new THREE.BoxGeometry(.1,.42,.1),M.darkstone,px,.18,pz,cow);
+      
+      // Natural positioning within group
+      const angle = Math.random() * Math.PI * 2;
+      const distance = Math.random() * 2;
+      cow.position.set(
+        group.centerX + Math.cos(angle) * distance,
+        0,
+        group.centerZ + Math.sin(angle) * distance
+      );
+      cow.rotation.y = Math.random() * Math.PI * 2;
+      g.add(cow);
+    }
+  }
+  
+  g.position.set(x, 0, z);
+  scene3.add(g);
+  registerBlocker(`pasture_${Math.round(x)}_${Math.round(z)}`, x, z, 5.5);
+}
+
+function getDayPhase(){
+  const h=Math.floor(dayClock*24);
+  if(h<5||h>=21)return {key:'night',label:'Gece'};
+  if(h<8)return {key:'morning',label:'Sabah'};
+  if(h<17)return {key:'work',label:'Gunduz'};
+  if(h<21)return {key:'evening',label:'Aksam'};
+  return {key:'night',label:'Gece'};
+}
+
+function updateDayNight(dt){
+  const prevDay=Math.floor(state.day);
+  dayClock+=dt/DAY_SECONDS;
+  if(dayClock>=1){
+    dayClock-=1;
+    state.day+=1;
+    notify(`${state.day}. gun basladi.`);
+    runVillageAI();
+  }
+  const t=dayClock;
+  const sun=Math.max(.05,Math.sin(t*Math.PI));
+  scene3.background.setHSL(.56,.42,.12+sun*.42);
+  scene3.fog.color.setHSL(.56,.34,.12+sun*.36);
+  ambLight.intensity=.18+sun*.55;
+  sunLight.intensity=.08+sun*1.05;
+  sunLight.position.set(Math.cos(t*Math.PI*2)*120,Math.abs(Math.sin(t*Math.PI))*150,70);
+  const hour=String(Math.floor(t*24)).padStart(2,'0');
+  const minute=String(Math.floor((t*24%1)*60)).padStart(2,'0');
+  const phase=getDayPhase();
+  const nearest=getAllSettlements().reduce((best,s)=>{
+    const d=Math.hypot(PL.pos.x-s.x,PL.pos.z-s.z);
+    return d<best.d?{s,d}:best;
+  },{s:village,d:Infinity});
+  document.getElementById('timebar').textContent=`${phase.label} ${hour}:${minute} - ${nearest.d<24?nearest.s.name:nearest.s.name+' yolunda'}`;
+  if(prevDay!==Math.floor(state.day))updateUI();
+}
+
+function updatePlayer(dt,gt){
+  const fwd=new THREE.Vector3(-Math.sin(camAngle),0,-Math.cos(camAngle));
+  const right=new THREE.Vector3(Math.cos(camAngle),0,-Math.sin(camAngle));
+  const move=new THREE.Vector3();
+  let moving=false;
+  if(keys.w||keys.arrowup){move.add(fwd);moving=true}
+  if(keys.s||keys.arrowdown){move.sub(fwd);moving=true}
+  if(keys.a||keys.arrowleft){move.sub(right);moving=true}
+  if(keys.d||keys.arrowright){move.add(right);moving=true}
+  if(moving){
+    // Apply transport speed modifier
+    const actualSpeed = PL.speed * playerTransport.currentSpeed;
+    move.normalize().multiplyScalar(actualSpeed*dt);
+    const nextX=Math.max(-168,Math.min(168,PL.pos.x+move.x));
+    const nextZ=Math.max(-168,Math.min(168,PL.pos.z+move.z));
+    if(!isBlocked(nextX,nextZ)){
+      PL.pos.x=nextX;
+      PL.pos.z=nextZ;
+    }else{
+      const slideX=!isBlocked(nextX,PL.pos.z);
+      const slideZ=!isBlocked(PL.pos.x,nextZ);
+      if(slideX)PL.pos.x=nextX;
+      if(slideZ)PL.pos.z=nextZ;
+    }
+    PL.pos.y=0;
+    PL.g.position.copy(PL.pos);
+    const targetAngle=Math.atan2(move.x,move.z);
+    let da=targetAngle-PL.angle;
+    while(da>Math.PI)da-=Math.PI*2;
+    while(da<-Math.PI)da+=Math.PI*2;
+    PL.angle+=da*.18;
+    PL.g.rotation.y=PL.angle;
+    const walk=Math.sin(gt*10)*.38;
+    PL.lL.rotation.x=walk;
+    PL.lR.rotation.x=-walk;
+    PL.aL.rotation.x=-walk*.35;
+    PL.aR.rotation.x=walk*.35;
+  }else{
+    PL.lL.rotation.x*=.82;PL.lR.rotation.x*=.82;PL.aL.rotation.x*=.82;PL.aR.rotation.x*=.82;
+  }
+  camera.position.set(PL.pos.x+Math.sin(camAngle)*17,14,PL.pos.z+Math.cos(camAngle)*17);
+  camera.lookAt(PL.pos.x,1,PL.pos.z);
+}
+
+function checkNear(){
+  nearInter=null;
+  let best=5.4;
+  for(const item of interactables){
+    if(item.disabled)continue;
+    const d=Math.hypot(PL.pos.x-item.x,PL.pos.z-item.z);
+    if(d<best){best=d;nearInter=item}
+  }
+  const prompt=document.getElementById('interactionPrompt');
+  if(nearInter){
+    prompt.style.display='block';
+    prompt.textContent=`[ E ] ${nearInter.name}`;
+  }else prompt.style.display='none';
+}
+
+function interact(){
+  if(!nearInter)return;
+  if(nearInter.type==='village')renderVillageMenu();
+  if(nearInter.type==='field')renderFieldMenu(nearInter.fieldId);
+  if(nearInter.type==='house')renderHouseMenu(nearInter.houseId);
+  if(nearInter.type==='plot')renderPlotMenu(nearInter.plotId);
+  if(nearInter.type==='npc')renderNPCMenu(nearInter.npcId);
+  if(nearInter.type==='tradeVillage')renderTradeVillageMenu(nearInter.settlementId);
+}
+
+function setMenu(title,html){
+  document.getElementById('menuTitle').textContent=title;
+  document.getElementById('menuContent').innerHTML=html;
+  document.getElementById('menu').style.display='block';
+}
+function closeMenu(){document.getElementById('menu').style.display='none'}
+function closeEconomy(){document.getElementById('economyPanel').style.display='none'}
+function closeLand(){document.getElementById('landPanel').style.display='none'}
+
+function renderVillageMenu(){
+  recalculateVillage();
+  const transportCapacity = getPlayerTransportCapacity();
+  const currentWeight = getCurrentInventoryWeight();
+  setMenu('Ekinli koy merkezi',`
+    <div class="info-row"><span>Nufus / kapasite</span><span class="price">${village.population} / ${village.capacity}</span></div>
+    <div class="info-row"><span>Ev sayisi</span><span class="price">${village.houses.length}</span></div>
+    <div class="info-row"><span>Tarla sayisi</span><span class="price">${village.fields.length}</span></div>
+    <div class="info-row"><span>Koy kasasi</span><span class="price">${money(village.treasury)} altin</span></div>
+    <div class="info-row"><span>Gida dengesi</span><span class="price">${village.foodBalance.toFixed(1)} tahil/tick</span></div>
+    <h3>Tasima Durumu</h3>
+    <div class="info-row"><span>Envanter kapasitesi</span><span class="price">${currentWeight} / ${transportCapacity}</span></div>
+    <div class="info-row"><span>At</span><span class="price">${playerTransport.horse ? 'Var' : 'Yok'}</span></div>
+    <div class="info-row"><span>Kervan</span><span class="price">${playerTransport.caravan ? 'Var' : 'Yok'}</span></div>
+    <h3>Koy isleri</h3>
+    <button onclick="renderTradeVillageMenu('ekinli')">Ekinli pazarini ac</button>
+    <button onclick="hireVillageWorker()" ${gold<18?'disabled':''}>Tarla iscisi kirala (18 altin)</button>
+    <button onclick="buyHorse()" ${gold<50 || playerTransport.horse?'disabled':''}>At satin al (50 altin)</button>
+    <button onclick="buyCaravan()" ${gold<150 || playerTransport.caravan?'disabled':''}>Kervan satin al (150 altin)</button>
+    <button onclick="openEconomy()">Ekonomi defterini ac</button>
+    <button onclick="openLandMenu()">Tarla ve arazi listesi</button>
+    <p class="muted">Son AI karari: ${village.aiMessage}</p>
+  `);
+}
+
+function renderTradeVillageMenu(settlementId){
+  const settlement=getSettlementById(settlementId);
+  if(!settlement||!settlement.market)return;
+  syncEkinliMarketFromVillage();
+  let h=`
+    <div class="info-row"><span>Uzmanlik</span><span class="price">${settlement.icon||'Tarim pazari'}</span></div>
+    <div class="info-row"><span>Nufus</span><span class="price">${settlement.population||village.population}</span></div>
+    <div class="info-row"><span>Mesafe</span><span class="price">${Math.round(Math.hypot(settlement.x-PL.pos.x,settlement.z-PL.pos.z))} adim</span></div>
+    <h3>Pazar fiyatlari</h3>
+    <p class="muted">Stok az ve talep yuksekse fiyat artar. Uzak koyler ayni urune farkli fiyat verir.</p>
+  `;
+  for(const good in MARKET_GOODS){
+    const buyP=marketPrice(settlement,good,'buy');
+    const sellP=marketPrice(settlement,good,'sell');
+    const stock=settlement.market.stock[good]??0;
+    const demand=settlement.market.demand[good]??0;
+    const have=state[good]??0;
+    const sid = settlement.id || 'ekinli';
+    h+=`
+      <div class="info-row"><span>${MARKET_GOODS[good].name}</span><span class="price">Al ${buyP} / Sat ${sellP}</span></div>
+      <div class="info-row"><span>Stok ${stock.toFixed(0)} | Talep ${demand.toFixed(0)}</span><span>Senin: ${have}</span></div>
+      <div style="display:flex;gap:6px;margin-bottom:6px">
+        <button onclick="buyGood('${sid}','${good}')" ${gold<buyP||stock<1?'disabled':''}>1 ${MARKET_GOODS[good].name} al</button>
+        <button onclick="sellGood('${sid}','${good}')" ${have<1?'disabled':''}>1 ${MARKET_GOODS[good].name} sat</button>
+      </div>
+    `;
+  }
+  setMenu(`${settlement.name} pazari`,h);
+}
+
+function buyGood(settlementId,good){
+  const settlement=getSettlementById(settlementId);
+  if(!settlement||!settlement.market)return;
+  const price=marketPrice(settlement,good,'buy');
+  const amount=shiftHeld?10:1;
+  const totalCost=price*amount;
+  if(gold<totalCost||settlement.market.stock[good]<amount){notify('Bu alim icin stok veya altin yetmiyor.');return}
+  const cap=getPlayerTransportCapacity();
+  const weight=getCurrentInventoryWeight();
+  if(weight+amount>cap){notify('Envanter dolu! Daha fazla tasiyamazsin.');return}
+  gold-=totalCost;
+  state[good]=(state[good]||0)+amount;
+  settlement.market.stock[good]-=amount;
+  settlement.market.demand[good]=Math.min(120,settlement.market.demand[good]+1.8*amount);
+  settlement.treasury=(settlement.treasury||0)+totalCost;
+  state.incomeHistory.push({type:'buy',label:`${settlement.name} ${MARKET_GOODS[good].name}`,amount:-totalCost,time:Date.now()});
+  notify(`${settlement.name}: ${amount} ${MARKET_GOODS[good].name} alindi (-${totalCost} altin).`);
+  playerEnergy=Math.max(0,playerEnergy-1);
+  updateUI();
+  renderTradeVillageMenu(settlementId);
+}
+
+function sellGood(settlementId,good){
+  const settlement=getSettlementById(settlementId);
+  if(!settlement||!settlement.market||!state[good])return;
+  const amount=shiftHeld?Math.min(10,state[good]):1;
+  if(state[good]<amount)return;
+  const price=marketPrice(settlement,good,'sell');
+  const totalRevenue=price*amount;
+  state[good]-=amount;
+  gold+=totalRevenue;
+  settlement.market.stock[good]+=amount;
+  settlement.market.demand[good]=Math.max(5,settlement.market.demand[good]-1.2*amount);
+  settlement.treasury=Math.max(0,(settlement.treasury||0)-totalRevenue);
+  state.incomeHistory.push({type:'sell',label:`${settlement.name} ${MARKET_GOODS[good].name}`,amount:totalRevenue,time:Date.now()});
+  notify(`${settlement.name}: ${amount} ${MARKET_GOODS[good].name} satildi (+${totalRevenue} altin).`);
+  playerEnergy=Math.max(0,playerEnergy-1);
+  updateUI();
+  renderTradeVillageMenu(settlementId);
+}
+
+function renderFieldMenu(fieldId){
+  const f=village.fields.find(x=>x.id===fieldId);
+  if(!f)return;
+  const owned=f.owner==='player';
+  const cap=fieldWorkerCapacity(f);
+  const prod=fieldProduction(f);
+  
+  // Initialize depot if not exists
+  if(!f.depot){
+    f.depot = {
+      capacity: fieldArea(f) * 2,
+      current: 0,
+      goods: { grain: 0 }
+    };
+  }
+  
+  setMenu(f.name,`
+    <div class="info-row"><span>Tur</span><span class="price">Tarla (sadece uretim)</span></div>
+    <div class="info-row"><span>Seviye</span><span class="price">${f.level} / 100</span></div>
+    <div class="info-row"><span>Alan</span><span class="price">${fieldArea(f)} birim</span></div>
+    <div class="info-row"><span>Isci kapasitesi</span><span class="price">${f.workers} / ${cap}</span></div>
+    <div class="info-row"><span>Uretim</span><span class="price">${prod.toFixed(1)} tahil/tick</span></div>
+    <div class="info-row"><span>Kalite</span><span class="price">${Math.round(f.fertility*100)}% toprak, ${Math.round(f.maintenance*100)}% bakim</span></div>
+    <div class="info-row"><span>Sahip</span><span class="price">${owned?'Oyuncu':f.owner==='ali'?'Ali':f.owner==='hasan'?'Hasan':'Ekinli'}</span></div>
+    <h3>Depo Durumu</h3>
+    <div class="info-row"><span>Depo dolulugu</span><span class="price">${f.depot.current.toFixed(1)} / ${f.depot.capacity.toFixed(1)}</span></div>
+    <div class="info-row"><span>Depodaki tahıl</span><span class="price">${f.depot.goods.grain.toFixed(1)} birim</span></div>
+    <h3>Tarla islemleri</h3>
+    ${owned?`
+      <button onclick='harvestFromDepot("${f.id}")' ${f.depot.goods.grain < 1?'disabled':''}>Depodan tahıl topla (${Math.min(10, f.depot.goods.grain)} birim)</button>
+      <button onclick='workField("${f.id}")'>Tarlada calis (+6 tahil)</button>
+      <button onclick='hireFieldWorker("${f.id}")' ${gold<18||f.workers>=cap?'disabled':''}>Bu tarlaya isci al (18 altin)</button>
+      <button onclick='upgradeField("${f.id}")' ${gold<upgradeCostField(f)||f.level>=100?'disabled':''}>Alani genislet (${upgradeCostField(f)} altin)</button>
+    `:`
+      <button onclick='buyField("${f.id}")' ${gold<fieldBuyPrice(f)?'disabled':''}>Tarlayi satin al (${fieldBuyPrice(f)} altin)</button>
+    `}
+  `);
+}
+
+function harvestFromDepot(fieldId){
+  const f=village.fields.find(x=>x.id===fieldId);
+  if(!f || f.owner!=='player') return;
+  if(!f.depot || f.depot.goods.grain < 1){notify('Depoda toplanacak tahil yok.');return}
+  const transportCapacity=getPlayerTransportCapacity();
+  const availableInventorySpace=transportCapacity-getCurrentInventoryWeight();
+  if(availableInventorySpace<=0){notify('Envanteriniz dolu!');return}
+  const harvestAmount=Math.min(Math.floor(f.depot.goods.grain),availableInventorySpace,10);
+  if(harvestAmount<1){notify('Toplanacak tahil yok.');return}
+  f.depot.goods.grain=Math.max(0,f.depot.goods.grain-harvestAmount);
+  f.depot.current=Math.max(0,f.depot.current-harvestAmount);
+  state.grain+=harvestAmount;
+  notify(`${harvestAmount} birim tahil depodan toplandi. Depoda ${Math.floor(f.depot.goods.grain)} birim kaldi.`);
+  updateUI();
+  renderFieldMenu(fieldId);
+}
+
+function getPlayerTransportCapacity(){
+  // Base capacity + transport bonuses
+  let capacity = 7; // Base inventory capacity
+  
+  if(playerTransport.horse) capacity += 5;
+  if(playerTransport.caravan) capacity += 20;
+  
+  return capacity;
+}
+
+function getCurrentInventoryWeight(){
+  let total = 0;
+  // Map goods to weights (1 unit = 1 weight for simplicity)
+  const inventoryMapping = {
+    'grain': 'food',
+    'meat': 'meat', 
+    'wood': 'wood',
+    'iron': 'iron',
+    'leather': 'leather',
+    'weapon': 'weapon',
+    'armor': 'armor'
+  };
+  
+  for(const [ecoGood, invGood] of Object.entries(inventoryMapping)){
+    total += state[ecoGood] || 0;
+  }
+  
+  return total;
+}
+
+function buyHorse(){
+  if(gold < 50){
+    notify('At almak için 50 altın gerekli!');
+    return;
+  }
+  
+  if(playerTransport.horse){
+    notify('Zaten bir atınız var!');
+    return;
+  }
+  
+  gold -= 50;
+  playerTransport.horse = true;
+  playerTransport.currentSpeed = 1.5; // 50% faster
+  
+  notify('At satın alındı! Hızınız ve taşıma kapasiteniz arttı.');
+  updateUI();
+  renderVillageMenu();
+}
+
+function buyCaravan(){
+  if(gold < 150){
+    notify('Kervan almak için 150 altın gerekli!');
+    return;
+  }
+  
+  if(playerTransport.caravan){
+    notify('Zaten bir kervanınız var!');
+    return;
+  }
+  
+  if(!playerTransport.horse){
+    notify('Kervan kullanmak için önce at almalısınız!');
+    return;
+  }
+  
+  gold -= 150;
+  playerTransport.caravan = true;
+  playerTransport.currentSpeed = 0.8; // Slower with caravan
+  
+  notify('Kervan satın alındı! Taşıma kapasiteniz大大 arttı, ancak hızınız düştü.');
+  updateUI();
+  renderVillageMenu();
+}
+
+function renderHouseMenu(houseId){
+  const h=village.houses.find(x=>x.id===houseId);
+  if(!h)return;
+  const def=housingDef(h.level);
+  const econ=calculateHouseEconomy(h);
+  
+  // Find NPC owner if any
+  const npcOwner = npcs.find(npc => npc.economy && npc.economy.property.includes(h.id));
+  const ownerInfo = npcOwner ? 
+    `<div class="info-row"><span>Sahip</span><span class="price">${npcOwner.name}</span></div>` : 
+    `<div class="info-row"><span>Sahip</span><span class="price">Ekinli</span></div>`;
+  
+  setMenu(h.name,`
+    <div class="info-row"><span>Seviye</span><span class="price">${h.level}. seviye - ${def.name}</span></div>
+    <div class="info-row"><span>Aile / kapasite</span><span class="price">${h.families.length} / ${def.families}</span></div>
+    <div class="info-row"><span>Nufus / kapasite</span><span class="price">${econ.pop} / ${econ.capacity}</span></div>
+    <div class="info-row"><span>Hane geliri</span><span class="price">${econ.net.toFixed(1)}</span></div>
+    <div class="info-row"><span>Vergi</span><span class="price">${econ.tax.toFixed(1)}</span></div>
+    ${ownerInfo}
+    <h3>Konut yatirimi</h3>
+    <button onclick='upgradeHouse("${h.id}")' ${gold<houseUpgradeCost(h)||h.level>=10?'disabled':''}>Evi yukselt (${houseUpgradeCost(h)} altin)</button>
+    ${npcOwner ? `
+      <h3>Sahip Durumu</h3>
+      <div class="info-row"><span>Altın</span><span class="price">${npcOwner.economy.gold} altın</span></div>
+      <div class="info-row"><span>Tahıl</span><span class="price">${npcOwner.economy.inventory.grain || 0} birim</span></div>
+      <div class="info-row"><span>Et</span><span class="price">${npcOwner.economy.inventory.meat || 0} birim</span></div>
+    ` : ''}
+    <p class="muted">Ev seviyesi arttikca aile kapasitesi, nufus kapasitesi, hane geliri ve vergi uretimi artar.</p>
+  `);
+}
+
+function renderPlotMenu(plotId){
+  const p=village.plots.find(x=>x.id===plotId);
+  if(!p||p.built)return;
+  const owned=p.owner==='player';
+  setMenu('Bos arazi',`
+    <div class="info-row"><span>Tur</span><span class="price">Arazi (yapilasma alani)</span></div>
+    <div class="info-row"><span>Uretim</span><span class="price">Yok</span></div>
+    <div class="info-row"><span>Seviye</span><span class="price">Yok</span></div>
+    <div class="info-row"><span>Sahip</span><span class="price">${owned?'Oyuncu':p.owner||'Bos'}</span></div>
+    <h3>Arazi islemleri</h3>
+    ${owned?`
+      <button onclick='buildPlayerHouse("${p.id}")' ${gold<85?'disabled':''}>Kerpic ev insa et (85 altin)</button>
+    `:`
+      <button onclick='buyPlot("${p.id}")' ${gold<45?'disabled':''}>Araziyi satin al (45 altin)</button>
+    `}
+    <p class="muted">Arazi dogrudan uretim yapmaz; ev, is yeri veya depo gibi yapilar icin kapasite saglar.</p>
+  `);
+}
+
+function renderNPCMenu(npcId){
+  const npc=npcs.find(x=>x.id===npcId);
+  if(!npc)return;
+  const roleInfo={
+    farmer:'Tarimla ugrasiyor, topraktan ekim yaparak geciniyor.',
+    worker:'Fiziksel is calisiyor, emeğiyle kazaniyor.',
+    child:'Oyun oynuyor ve ailesine yardim ediyor.',
+    elder:'Hikayeler anlatiyor ve bilgisini paylastiyor.',
+    trader:'Pazarda esnaflık yaparak ticaret yapiyor.',
+    leader:'Koyu yonetiyor ve kararlar aliyor.',
+    village_owner:'Koyun sahibi, tarlalarini yonetiyor ve isci calistiriyor.',
+    trader_owner:'Tuccar, köyler arasi ticaret yaparak para kazaniyor.'
+  };
+  
+  const econ = npc.economy;
+  const propertyCount = econ.property.length;
+  const totalWealth = econ.gold + Object.values(econ.inventory).reduce((sum, val) => sum + val, 0) * 5; // Rough value calculation
+  
+  setMenu(npc.name,`
+    <div class="info-row"><span>Rol</span><span class="price">${npc.role}</span></div>
+    <div class="info-row"><span>Evi</span><span class="price">${npc.home.name}</span></div>
+    ${npc.field?`<div class="info-row"><span>Tarlası</span><span class="price">${npc.field.name}</span></div>`:''}
+    <div class="info-row"><span>Mülk sayısı</span><span class="price">${propertyCount} adet</span></div>
+    <h3>Kişisel Ekonomi</h3>
+    <div class="info-row"><span>Altın</span><span class="price">${econ.gold} altın</span></div>
+    <div class="info-row"><span>Tahıl</span><span class="price">${econ.inventory.grain || 0} birim</span></div>
+    <div class="info-row"><span>Et</span><span class="price">${econ.inventory.meat || 0} birim</span></div>
+    <div class="info-row"><span>Odun</span><span class="price">${econ.inventory.wood || 0} birim</span></div>
+    <div class="info-row"><span>Aletler</span><span class="price">${econ.inventory.tools || 0} adet</span></div>
+    <div class="info-row"><span>Toplam servet</span><span class="price">~${totalWealth} altın</span></div>
+    <div class="info-row"><span>Yasam durumu</span><span class="price">${roleInfo[npc.role]||'Koy yasamı sürüyor.'}</span></div>
+    ${npc.role === 'trader' || npc.role === 'trader_owner' ? `
+      <h3>Ticaret</h3>
+      <button onclick='tradeWithNPC(${npcId})' ${econ.gold < 5 ? 'disabled' : ''}>Ticaret yap (minimum 5 altın)</button>
+    ` : ''}
+    ${npc.economy.employer ? `
+      <h3>İşçi Durumu</h3>
+      <div class="info-row"><span>İşveren</span><span class="price">${npc.economy.employer === 0 ? 'Ali' : 'Hasan'}</span></div>
+      <div class="info-row"><span>Çalışma durumu</span><span class="price">${npc.economy.isWorking ? 'Çalışıyor' : 'İşsiz'}</span></div>
+    ` : ''}
+    <p class="muted">${npc.name}: "${getNPCDialogue(npc)}"</p>
+  `);
+}
+
+function tradeWithNPC(npcId){
+  const npc=npcs.find(x=>x.id===npcId);
+  if(!npc || (npc.role !== 'trader' && npc.role !== 'trader_owner')) return;
+  
+  const econ = npc.economy;
+  const now = Date.now();
+  
+  // Check trade cooldown
+  if(now - econ.lastTradeTime < econ.tradeCooldown){
+    const remaining = Math.ceil((econ.tradeCooldown - (now - econ.lastTradeTime)) / 1000);
+    notify(`${npc.name}: "${remaining} saniye sonra tekrar ticaret yapabilirim."`);
+    return;
+  }
+  
+  // NPC trading logic based on budget
+  const tradeBudget = Math.min(econ.gold * 0.3, 20); // Max 30% of gold, max 20
+  if(tradeBudget < 5){
+    notify(`${npc.name}: "Su anda ticaret yapacak param yok."`);
+    return;
+  }
+  
+  // NPC wants to buy goods that are in demand
+  const desiredGoods = ['grain', 'meat', 'wood'];
+  const goodToBuy = desiredGoods[Math.floor(Math.random() * desiredGoods.length)];
+  
+  if(state[goodToBuy] && state[goodToBuy] > 0){
+    const sellPrice = MARKET_GOODS[goodToBuy]?.base || 8;
+    const buyAmount = Math.min(state[goodToBuy], Math.floor(tradeBudget / sellPrice));
+    
+    if(buyAmount > 0){
+      // Trade happens
+      state[goodToBuy] -= buyAmount;
+      gold += buyAmount * sellPrice;
+      
+      econ.inventory[goodToBuy] = (econ.inventory[goodToBuy] || 0) + buyAmount;
+      econ.gold -= buyAmount * sellPrice;
+      econ.lastTradeTime = now;
+      
+      notify(`${npc.name}: "${buyAmount} birim ${MARKET_GOODS[goodToBuy]?.name || goodToBuy} aldım, ${buyAmount * sellPrice} altın ödedim."`);
+      updateUI();
+      renderNPCMenu(npcId);
+    } else {
+      notify(`${npc.name}: "O kadar mal satin alamam."`);
+    }
+  } else {
+    notify(`${npc.name}: "Satin alacak ${MARKET_GOODS[goodToBuy]?.name || goodToBuy} bulamıyorum."`);
+  }
+}
+
+function getNPCDialogue(npc){
+  const lines={
+    farmer:'Bugun tarlanin bakimi iyi olursa hasat daha guclu gelir.',
+    worker:'Alan buyudukce daha fazla isci gerekiyor.',
+    child:'Aksam olunca herkes eve donuyor.',
+    elder:'Koyun gucu ev, tarla ve nufus dengesinden gelir.',
+    trader:'Tahilin fazlasi pazara iner, vergi de kasaya girer.',
+    leader:'Ekinli simdilik tek koy; her genisleme buradan baslayacak.',
+    village_owner:'Koyumun gelecegi tarlalarda, isicilerle calisiyoruz.',
+    trader_owner:'Iyi bir ticaret yaptim bugun, kar marji guzeldi.'
+  };
+  return lines[npc.role]||'Selam yabanci.';
+}
+
+function talkNPC(id){
+  const n=npcs.find(x=>x.id===id);
+  notify(`${n.name}: "${getNPCDialogue(n)}"`);
+  closeMenu();
+}
+
+function hireVillageWorker(){
+  if(gold<18)return;
+  const f=village.fields.slice().sort((a,b)=>(a.workers/fieldWorkerCapacity(a))-(b.workers/fieldWorkerCapacity(b)))[0];
+  if(!f){notify('Isci atanacak tarla yok.');return}
+  
+  // Find an unemployed worker NPC to assign to this field
+  const unemployedWorker=npcs.find(n=>n.role==='worker'&&!n.economy.employer&&n.id!==0&&n.id!==1);
+  if(unemployedWorker){
+    unemployedWorker.economy.employer='player';
+    unemployedWorker.economy.workLocation={x:f.x,z:f.z};
+    unemployedWorker.economy.isWorking=true;
+  }
+  
+  gold-=18;
+  state.workers+=1;
+  f.workers=Math.min(fieldWorkerCapacity(f),f.workers+1);
+  notify(`${f.name} icin isci tutuldu.`);
+  updateUI();
+  renderVillageMenu();
+}
+
+function buyField(id){
+  const f=village.fields.find(x=>x.id===id);
+  if(!f)return;
+  const price=fieldBuyPrice(f);
+  if(gold<price){notify('Yeterli altin yok.');return}
+  gold-=price;
+  f.owner='player';
+  state.ownedFields.push(id);
+  notify(`${f.name} satin alindi.`);
+  updateUI();
+  renderFieldMenu(id);
+}
+
+function workField(id){
+  const f=village.fields.find(x=>x.id===id);
+  if(!f)return;
+  if(playerEnergy<30){notify('Yorgunsun! Calismak icin en az 30 enerji gerekli.');return}
+  if(state.workedToday){notify('Bugun zaten calistin. Yarin tekrar calisabilirsin.');return}
+  // Work advances time by 10 hours
+  const advanceHours=10;
+  dayClock+=advanceHours/24;
+  if(dayClock>=1){dayClock-=1;state.day+=1;notify(`${state.day}. gun basladi.`);runVillageAI()}
+  const grainGain=Math.round(6+f.level*0.5);
+  state.grain+=grainGain;
+  f.maintenance=Math.min(1.08,f.maintenance+.025);
+  playerEnergy=Math.max(0,playerEnergy-30);
+  state.workedToday=true;
+  notify(`Tarlada calistin: +${grainGain} tahil, bakim artti. 10 saat gecti. Enerji -30.`);
+  updateUI();
+  closeMenu();
+}
+
+function hireFieldWorker(id){
+  const f=village.fields.find(x=>x.id===id);
+  if(!f||gold<18)return;
+  const cap=fieldWorkerCapacity(f);
+  if(f.workers>=cap){notify('Bu tarlanin isci kapasitesi dolu.');return}
+  
+  // Find an unemployed worker NPC and assign them to this field
+  const unemployedWorker=npcs.find(n=>n.role==='worker'&&!n.economy.employer&&n.id!==0&&n.id!==1);
+  if(unemployedWorker){
+    unemployedWorker.economy.employer='player';
+    unemployedWorker.economy.workLocation={x:f.x,z:f.z};
+    unemployedWorker.economy.isWorking=true;
+    notify(`${unemployedWorker.name} tarlaya atandi.`);
+  }
+  
+  gold-=18;
+  state.workers+=1;
+  f.workers+=1;
+  notify(`${f.name} icin yeni isci alindi.`);
+  updateUI();
+  renderFieldMenu(id);
+}
+
+function upgradeField(id){
+  const f=village.fields.find(x=>x.id===id);
+  if(!f||f.level>=100)return;
+  const cost=upgradeCostField(f);
+  if(gold<cost){notify('Yeterli altin yok.');return}
+  gold-=cost;
+  f.level+=1;
+  f.maintenance=Math.min(1.04,f.maintenance+.02);
+  refreshFieldMesh(f);
+  notify(`${f.name} alani genisledi. Seviye ${f.level}.`);
+  updateUI();
+  renderFieldMenu(id);
+}
+
+function upgradeHouse(id){
+  const h=village.houses.find(x=>x.id===id);
+  if(!h||h.level>=10)return;
+  const cost=houseUpgradeCost(h);
+  if(gold<cost){notify('Yeterli altin yok.');return}
+  gold-=cost;
+  h.level+=1;
+  normalizeHouseFamilies(h);
+  refreshHouseMesh(h);
+  recalculateVillage();
+  notify(`${h.name} ${h.level}. seviyeye yukseldi.`);
+  updateUI();
+  renderHouseMenu(id);
+}
+
+function buyPlot(id){
+  const p=village.plots.find(x=>x.id===id);
+  if(!p||gold<45)return;
+  gold-=45;
+  p.owner='player';
+  state.ownedPlots.push(id);
+  notify('Arazi satin alindi.');
+  updateUI();
+  renderPlotMenu(id);
+}
+
+function buildPlayerHouse(id){
+  const p=village.plots.find(x=>x.id===id);
+  if(!p||p.owner!=='player'||gold<85)return;
+  gold-=85;
+  buildHouseOnPlot(p,'player');
+  notify('Yeni kerpic ev insa edildi.');
+  updateUI();
+  closeMenu();
+}
+
+function openEconomy(){
+  recalculateVillage();
+  let h=`
+    <h3>Genel</h3>
+    <div class="info-row"><span>Nufus</span><span>${village.population} / ${village.capacity}</span></div>
+    <div class="info-row"><span>Koy kasasi</span><span>${money(village.treasury)} altin</span></div>
+    <div class="info-row"><span>Son vergi</span><span>${village.taxLastTick.toFixed(1)}</span></div>
+    <div class="info-row"><span>Hane net geliri</span><span>${village.houseIncome.toFixed(1)}</span></div>
+    <div class="info-row"><span>Tarla uretimi</span><span>${village.fieldProduction.toFixed(1)} tahil/tick</span></div>
+    <div class="info-row"><span>Gida dengesi</span><span>${village.foodBalance.toFixed(1)}</span></div>
+    <h3>Ev seviyeleri</h3>`;
+  for(const house of village.houses){
+    const e=calculateHouseEconomy(house);
+    h+=`<div class="info-row"><span>${house.name} - Sv.${house.level}</span><span>${e.pop}/${e.capacity} kisi, ${e.tax.toFixed(1)} vergi</span></div>`;
+  }
+  h+='<h3>Tarlalar</h3>';
+  for(const f of village.fields){
+    h+=`<div class="info-row"><span>${f.name} - Sv.${f.level}</span><span>${fieldArea(f)} alan, ${f.workers}/${fieldWorkerCapacity(f)} isci</span></div>`;
+  }
+  h+='<h3>Koyler arasi pazar</h3>';
+  for(const s of getAllSettlements()){
+    if(!s.market)continue;
+    const cheap=Object.keys(MARKET_GOODS).slice().sort((a,b)=>marketPrice(s,a,'buy')-marketPrice(s,b,'buy'))[0];
+    const expensive=Object.keys(MARKET_GOODS).slice().sort((a,b)=>marketPrice(s,b,'sell')-marketPrice(s,a,'sell'))[0];
+    h+=`<div class="info-row"><span>${s.name}</span><span>Ucuz: ${MARKET_GOODS[cheap].name} / Pahali: ${MARKET_GOODS[expensive].name}</span></div>`;
+  }
+  document.getElementById('econContent').innerHTML=h;
+  document.getElementById('economyPanel').style.display='block';
+}
+
+function openLandMenu(){
+  let h='<h3>Tarlalar</h3>';
+  for(const f of village.fields){
+    h+=`<button onclick='closeLand();renderFieldMenu("${f.id}")'>${f.name} - Sv.${f.level} - ${f.owner==='player'?'Oyuncu':'Ekinli'} - ${fieldArea(f)} alan</button>`;
+  }
+  h+='<h3>Araziler</h3>';
+  for(const p of village.plots){
+    if(p.built)continue;
+    h+=`<button onclick='closeLand();renderPlotMenu("${p.id}")'>${p.owner==='player'?'Oyuncu arazisi':'Bos arazi'} (${Math.round(p.x)}, ${Math.round(p.z)})</button>`;
+  }
+  h+='<h3>Koy yolları</h3>';
+  for(const s of tradeVillages){
+    h+=`<button onclick='closeLand();renderTradeVillageMenu("${s.id}")'>${s.name} - ${s.icon} - Ekinli'ye ${Math.round(Math.hypot(s.x-village.x,s.z-village.z))} adim</button>`;
+  }
+  document.getElementById('landContent').innerHTML=h;
+  document.getElementById('landPanel').style.display='block';
+}
+
+function updateUI(){
+  // Update player stats
+  document.getElementById('gold-amount').textContent=gold.toFixed(1);
+  document.getElementById('health-amount').textContent=health;
+  document.getElementById('level-amount').textContent=level;
+  
+  // Update village economy state (separate from player)
+  recalculateVillage();
+  
+  // Update HUD with PLAYER economy only - not village economy
+  document.getElementById('hgold').textContent=money(gold);
+  document.getElementById('hgrain').textContent=money(state.grain);
+  document.getElementById('hmeat').textContent=money(state.meat);
+  document.getElementById('hwood').textContent=money(state.wood);
+  document.getElementById('hworkers').textContent=state.workers;
+  document.getElementById('htax').textContent="0.0";
+  
+  // Update inventory if it exists
+  if (typeof updateInventory === 'function') {
+    updateInventory();
+  }
+}
+
+function drawMinimap(){
+  const c=document.getElementById('minimap'),ctx=c.getContext('2d');
+  const W=176,H=176,sc=.82,ox=W/2-PL.pos.x*sc,oz=H/2-PL.pos.z*sc;
+  ctx.fillStyle='#21361f';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='#95754a';ctx.lineWidth=2;
+  roads.forEach(r=>{ctx.beginPath();ctx.moveTo(r.x1*sc+ox,r.z1*sc+oz);ctx.lineTo(r.x2*sc+ox,r.z2*sc+oz);ctx.stroke()});
+  ctx.fillStyle='#d8c34e';
+  village.fields.forEach(f=>{ctx.fillRect(f.x*sc+ox-3,f.z*sc+oz-3,6,6)});
+  ctx.fillStyle='#caa56a';
+  village.houses.forEach(h=>{ctx.fillRect(h.x*sc+ox-2,h.z*sc+oz-2,4,4)});
+  ctx.fillStyle='#f1e4c2';
+  ctx.beginPath();ctx.arc(ox,oz,5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#e5a85a';
+  tradeVillages.forEach(s=>{ctx.beginPath();ctx.arc(s.x*sc+ox,s.z*sc+oz,5,0,Math.PI*2);ctx.fill()});
+  ctx.fillStyle='#4fa3ff';
+  const px=PL.pos.x*sc+ox,pz=PL.pos.z*sc+oz;
+  ctx.beginPath();ctx.arc(px,pz,5,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#6d5a31';ctx.lineWidth=2;ctx.strokeRect(1,1,W-2,H-2);
+}
+
+const keys={};
+document.addEventListener('keydown',e=>{
+  keys[e.key.toLowerCase()]=true;
+  if(e.key==='e'||e.key==='E')interact();
+  if(e.key==='Escape'){closeMenu();closeEconomy();closeLand()}
+  if(e.key==='k'||e.key==='K')toggleEconomyPanel();
+  if(e.key==='i'||e.key==='I')toggleInventoryPanel();
+  if(e.key==='t'||e.key==='T')openLandMenu();
+});
+document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+document.addEventListener('mousedown',e=>{if(e.button===2){rmb=true;lastMX=e.clientX}});
+document.addEventListener('mouseup',e=>{if(e.button===2)rmb=false});
+document.addEventListener('mousemove',e=>{if(rmb){camAngle+=(e.clientX-lastMX)*.006;lastMX=e.clientX}});
+document.addEventListener('contextmenu',e=>e.preventDefault());
+
+let lastT=0,gt=0,miniTimer=0;
+function loop(t){
+  requestAnimationFrame(loop);
+  const dt=Math.min((t-lastT)/1000,.06);
+  lastT=t;gt+=dt;
+  updatePlayer(dt,gt);
+  updateNPCs(dt,gt);
+  updateDayNight(dt);
+  econTimer+=dt;
+  aiTimer+=dt;
+  if(econTimer>6){econTimer-=6;processEconomyTick()}
+  if(aiTimer>42){aiTimer-=42;runVillageAI()}
+  checkNear();
+  miniTimer+=dt;
+  if(miniTimer>.35){miniTimer=0;drawMinimap()}
+  renderer.render(scene3,camera);
+}
+
+// Sandbox RPG System Integration
+let sandboxRPGSystem = null;
+
+// Load Sandbox RPG System scripts in correct order
+function loadSandboxRPGSystem() {
+  console.log('🎮 Loading Sandbox RPG System...');
+  
+  // Load core systems first
+  const scripts = [
+    'Engine/Entity.js',
+    'Engine/InteractionSystem.js', 
+    'Engine/NPCSystem.js',
+    'Engine/WorkersSystem.js',
+    'Engine/FarmSystem.js',
+    'ui/sandbox-rpg-ui.js'
+  ];
+  
+  // Load SandboxRPGSystem last after all dependencies are loaded
+  function loadSandboxRPGSystemLast() {
+    const script = document.createElement('script');
+    script.src = 'Engine/SandboxRPGSystem.js';
+    script.onload = () => {
+      console.log('📦 Loaded Engine/SandboxRPGSystem.js (final)');
+      console.log('✅ All Sandbox RPG scripts loaded!');
+      setupSandboxIntegration();
+    };
+    script.onerror = () => {
+      console.error('❌ Failed to load Engine/SandboxRPGSystem.js');
+    };
+    document.head.appendChild(script);
+  }
+  
+  let loadedCount = 0;
+  
+  function loadScript(index) {
+    if (index >= scripts.length) {
+      // All dependencies loaded, now load SandboxRPGSystem
+      loadSandboxRPGSystemLast();
+      return;
+    }
+    
+    const script = document.createElement('script');
+    script.src = scripts[index];
+    script.onload = () => {
+      loadedCount++;
+      console.log(`📦 Loaded ${scripts[index]} (${loadedCount}/${scripts.length})`);
+      loadScript(index + 1);
+    };
+    script.onerror = () => {
+      console.error(`❌ Failed to load ${scripts[index]}`);
+    };
+    
+    document.head.appendChild(script);
+  }
+  
+  loadScript(0);
+}
+
+// Initialize after page load
+document.addEventListener('DOMContentLoaded', () => {
+  // Wait a bit for existing systems to load
+  setTimeout(loadSandboxRPGSystem, 500);
+});
+
+let retryCount = 0;
+const maxRetries = 10;
+
+function setupSandboxIntegration() {
+  console.log('🔗 Setting up Sandbox RPG Integration...');
+  
+  // Wait for game to initialize and get Sandbox RPG System
+  setTimeout(() => {
+    if (window.game && window.game.sandboxRPG) {
+      sandboxRPGSystem = window.game.sandboxRPG;
+      console.log('✅ Sandbox RPG System connected!');
+      
+      // Update existing interaction system to use Sandbox RPG
+      const originalCheckNear = window.checkNear;
+      window.checkNear = function() {
+        // Get interactions from Sandbox RPG System
+        const interactions = sandboxRPGSystem.getInteractions();
+        
+        // Update UI with new interactions
+        if (window.sandboxUI) {
+          window.sandboxUI.updateInteractionMenu(interactions);
+        }
+        
+        // Keep original functionality for compatibility
+        if (originalCheckNear) {
+          originalCheckNear();
+        }
+      };
+      
+      // Update UI periodically
+      setInterval(() => {
+        if (sandboxRPGSystem && window.sandboxUI) {
+          const player = sandboxRPGSystem.getPlayer();
+          const stats = sandboxRPGSystem.getSystemStats();
+          
+          window.sandboxUI.updatePlayerStats(player);
+          window.sandboxUI.updateEconomyPanel(stats);
+          window.sandboxUI.updateWorkerStatus(sandboxRPGSystem.workersSystem.workers);
+        }
+      }, 1000);
+      
+      // Handle UI interaction events
+      document.addEventListener('uiInteraction', (event) => {
+        const { entityId, action } = event.detail;
+        sandboxRPGSystem.handleEntityInteraction(
+          sandboxRPGSystem.entities.get(entityId),
+          action
+        );
+      });
+      
+      console.log('🔗 Sandbox RPG Integration complete!');
+    } else {
+      retryCount++;
+      if (retryCount < maxRetries) {
+        console.warn(`⚠️ Game or Sandbox RPG System not available yet, retrying... (${retryCount}/${maxRetries})`);
+        setTimeout(setupSandboxIntegration, 1000);
+      } else {
+        console.error('❌ Failed to connect Sandbox RPG System after maximum retries');
+        console.log('🔍 Debug info:');
+        console.log('- window.game exists:', !!window.game);
+        console.log('- window.game.sandboxRPG exists:', !!(window.game && window.game.sandboxRPG));
+        console.log('- window.SandboxRPGSystem exists:', !!window.SandboxRPGSystem);
+        console.log('- window.sandboxUI exists:', !!window.sandboxUI);
+      }
+    }
+  }, 1000);
+}
+
+// Simple interaction function - preserve original gameplay
+function interact(){
+  if(!nearInter)return;
+  if(nearInter.type==='village')renderVillageMenu();
+  if(nearInter.type==='field')renderFieldMenu(nearInter.fieldId);
+  if(nearInter.type==='house')renderHouseMenu(nearInter.houseId);
+  if(nearInter.type==='plot')renderPlotMenu(nearInter.plotId);
+  if(nearInter.type==='npc')renderNPCMenu(nearInter.npcId);
+  if(nearInter.type==='tradeVillage')renderTradeVillageMenu(nearInter.settlementId);
+}
+
+// Toggle economy panel with K key
+function toggleEconomyPanel() {
+  const economyPanel = document.getElementById('economy-panel');
+  
+  if (economyPanel) {
+    if (economyPanel.classList.contains('collapsed')) {
+      economyPanel.classList.remove('collapsed');
+      economyPanel.classList.add('expanded');
+    } else {
+      economyPanel.classList.remove('expanded');
+      economyPanel.classList.add('collapsed');
+    }
+  }
+}
+
+// Toggle inventory panel with I key
+function toggleInventoryPanel() {
+  const inventoryPanel = document.getElementById('inventory-panel');
+  
+  if (inventoryPanel) {
+    if (inventoryPanel.classList.contains('collapsed')) {
+      inventoryPanel.classList.remove('collapsed');
+      inventoryPanel.classList.add('expanded');
+    } else {
+      inventoryPanel.classList.remove('expanded');
+      inventoryPanel.classList.add('collapsed');
+    }
+  }
+}
+
+
+// Update inventory display - compatible with economy system
+function updateInventory() {
+  // Map economy state goods to inventory display
+  const inventoryMapping = {
+    'grain': 'food',
+    'meat': 'meat', 
+    'wood': 'wood',
+    'iron': 'iron',
+    'leather': 'leather',
+    'weapon': 'weapon',
+    'armor': 'armor'
+  };
+  
+  // Update each item count from state
+  for (const [ecoGood, invGood] of Object.entries(inventoryMapping)) {
+    const element = document.getElementById(`inv-${invGood}`);
+    if (element && state[ecoGood] !== undefined) {
+      element.textContent = state[ecoGood] || 0;
+    }
+  }
+  
+  // Update capacity using state values
+  const totalItems = Object.values(inventoryMapping).reduce((sum, invGood) => {
+    const ecoGood = Object.keys(inventoryMapping).find(key => inventoryMapping[key] === invGood);
+    return sum + (state[ecoGood] || 0);
+  }, 0);
+  
+  const capacityElement = document.getElementById('inv-capacity');
+  if (capacityElement) {
+    // Use maxInventory if defined, otherwise calculate from state
+    const maxCap = maxInventory || 50;
+    capacityElement.textContent = `${totalItems}/${maxCap}`;
+  }
+  
+  }
+
+// Notification function
+function showNotification(message) {
+  // Create notification element if it doesn't exist
+  let notification = document.getElementById('game-notification');
+  if (!notification) {
+    notification = document.createElement('div');
+    notification.id = 'game-notification';
+    notification.style.cssText = `
+      position: fixed;
+      top: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(6, 4, 1, 0.95);
+      border: 2px solid #5a4a2a;
+      border-radius: 8px;
+      padding: 12px 20px;
+      color: #c8a84b;
+      font-family: Georgia, serif;
+      font-size: 14px;
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    `;
+    document.body.appendChild(notification);
+  }
+  
+  notification.textContent = message;
+  notification.style.opacity = '1';
+  
+  // Hide after 3 seconds
+  setTimeout(() => {
+    notification.style.opacity = '0';
+  }, 3000);
+}
+
+
+// Start game loop after ECS initializes
+setTimeout(() => {
+  if (typeof loop === 'function') {
+    requestAnimationFrame(loop);
+  }
+}, 1000);
+</script>
+</body>
+</html>

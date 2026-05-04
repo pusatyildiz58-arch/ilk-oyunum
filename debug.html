@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Game Loading</title>
+</head>
+<body>
+    <h1>Game Debug</h1>
+    <div id="status">Checking...</div>
+    <div id="error" style="color: red;"></div>
+    <div id="console-output"></div>
+    
+    <script>
+        // Override console.log to capture output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const consoleDiv = document.getElementById('console-output');
+        
+        function addToConsole(message, type = 'log') {
+            const div = document.createElement('div');
+            div.style.color = type === 'error' ? 'red' : 'black';
+            div.style.fontFamily = 'monospace';
+            div.style.fontSize = '12px';
+            div.style.marginBottom = '2px';
+            div.textContent = message;
+            consoleDiv.appendChild(div);
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole(args.join(' '), 'error');
+        };
+        
+        // Test basic JavaScript
+        document.getElementById('status').textContent = 'JavaScript working';
+        
+        // Test Three.js
+        setTimeout(() => {
+            try {
+                if (typeof THREE !== 'undefined') {
+                    addToConsole('Three.js loaded successfully');
+                } else {
+                    addToConsole('Three.js not loaded', 'error');
+                }
+            } catch (e) {
+                addToConsole('Error checking Three.js: ' + e.message, 'error');
+            }
+            
+            // Test main.js loading
+            try {
+                import('./main.js').then(module => {
+                    addToConsole('main.js loaded successfully');
+                    const Game = module.Game;
+                    addToConsole('Game class available: ' + typeof Game);
+                }).catch(error => {
+                    addToConsole('Error loading main.js: ' + error.message, 'error');
+                });
+            } catch (e) {
+                addToConsole('Import error: ' + e.message, 'error');
+            }
+        }, 1000);
+    </script>
+    
+    <!-- Load Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</body>
+</html>

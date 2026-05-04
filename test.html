@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Game Loading</title>
+</head>
+<body>
+    <h1>Game Loading Test</h1>
+    <div id="status">Loading...</div>
+    <div id="error" style="color: red;"></div>
+    
+    <script type="module">
+        try {
+            document.getElementById('status').textContent = 'Starting game import...';
+            
+            import('./Engine/game.js').then(module => {
+                document.getElementById('status').textContent = 'Game imported successfully';
+                
+                const Game = module.Game;
+                const game = new Game();
+                
+                document.getElementById('status').textContent = 'Game instance created';
+                
+                game.init().then(() => {
+                    document.getElementById('status').textContent = 'Game initialized successfully!';
+                    game.start();
+                    document.getElementById('status').textContent = 'Game started!';
+                }).catch(error => {
+                    document.getElementById('error').textContent = 'Game init error: ' + error.message;
+                    console.error('Game init error:', error);
+                });
+                
+            }).catch(error => {
+                document.getElementById('error').textContent = 'Import error: ' + error.message;
+                console.error('Import error:', error);
+            });
+            
+        } catch (error) {
+            document.getElementById('error').textContent = 'Script error: ' + error.message;
+            console.error('Script error:', error);
+        }
+    </script>
+</body>
+</html>
